@@ -80,9 +80,11 @@ onMounted(async () => {
   }
 
   // 채팅방에 들어온 순간은 진행 중으로 본다는 기존 정책은 유지하되(RESERVED로
-  // 들어와도 IN_PROGRESS로 취급), 이미 COMPLETED인지만은 실제 상태를 따른다.
-  if (realReservation.value?.status === 'COMPLETED') {
-    status.value = 'COMPLETED'
+  // 들어와도 IN_PROGRESS로 취급), 이미 COMPLETED인지만은 실제 상태를 따른다. 초기값이
+  // mock 기준이라 잘못된 값(예: mock엔 COMPLETED인데 실제는 아닌 경우)일 수 있어,
+  // COMPLETED로 "바꾸는" 조건만이 아니라 항상 실제 값으로 덮어써야 한다.
+  if (realReservation.value) {
+    status.value = realReservation.value.status === 'COMPLETED' ? 'COMPLETED' : 'IN_PROGRESS'
   }
 })
 
