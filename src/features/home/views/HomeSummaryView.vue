@@ -5,7 +5,7 @@ import { useRouter } from 'vue-router'
 import BaseSkeleton from '@/shared/components/atoms/feedback/BaseSkeleton.vue'
 
 import { useHomeStore } from '@/features/home/store/homeStore'
-import { useMemberStore } from '@/features/member/store/memberStore'
+import { useMemberStore } from '@/features/member'
 import { useAssetStore, FLOW_CONTEXT } from '@/features/asset'
 import GreetingHeader from '@/features/home/components/GreetingHeader.vue'
 import ClimbProgressCard from '@/features/home/components/ClimbProgressCard.vue'
