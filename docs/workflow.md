@@ -1,16 +1,18 @@
 # 개발 워크플로 (에이전트용)
 
-Claude Code 등 코딩 에이전트가 이 저장소에서 작업할 때 따르는 절차다. 새 작업은 아래 흐름을 따른다: **브랜치 생성 → 구현 → `develop`에 PR → 코드 리뷰 → merge**
+Claude Code 등 코딩 에이전트가 이 저장소에서 작업할 때 따르는 절차다. 새 작업은 아래 흐름을 따른다: **브랜치 생성 → 구현 → `main`에 PR → 코드 리뷰 → merge**
+
+이 저장소에는 `develop` 브랜치가 없다. 모든 작업 브랜치는 `main`에서 분기하고, `main`으로 PR을 올린다.
 
 ---
 
 ## 1. 브랜치 생성
 
-`develop`을 기준으로 새 브랜치를 만든다. `main`에서 직접 분기하지 않는다.
+`main`을 기준으로 새 브랜치를 만든다.
 
 ```bash
-git checkout develop
-git pull origin develop
+git checkout main
+git pull origin main
 git checkout -b feature/loan-list
 ```
 
@@ -40,9 +42,9 @@ git checkout -b feature/loan-list
 
 ---
 
-## 3. `develop`에 PR 생성
+## 3. `main`에 PR 생성
 
-- base 브랜치는 항상 `develop`이다. (`main`은 배포 전용이며 직접 PR 대상이 아니다)
+- base 브랜치는 항상 `main`이다.
 - PR 제목/설명에 변경 이유와 확인 방법을 남긴다.
 - PR을 올리면 GitHub Actions CI([.github/workflows/ci.yml](../.github/workflows/ci.yml))가 `npm ci → npm run lint → npm run build`를 자동 실행한다. CI가 실패하면 원인을 고치고 커밋을 추가한다.
 
@@ -58,6 +60,6 @@ git checkout -b feature/loan-list
 
 ## 5. Merge
 
-- CI 통과 + 리뷰 승인이 모두 끝난 뒤 `develop`으로 merge한다.
+- CI 통과 + 리뷰 승인이 모두 끝난 뒤 `main`으로 merge한다.
 - merge 후에는 작업 브랜치를 삭제한다.
 - force-push, `--no-verify`, 리뷰/승인 절차 우회는 사용자가 명시적으로 요청하지 않는 한 사용하지 않는다.
