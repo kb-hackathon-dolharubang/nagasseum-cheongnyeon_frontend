@@ -45,6 +45,9 @@ const HIDDEN_NAV_ROUTE_NAMES = [
   'consult-reservation-complete',
   'consult-chat',
   'consult-report',
+  // 상담사 홈은 사용자용 GNB(홈/자산/목표/상담/MY)와 무관한 별도 진입점이라, 같은
+  // 정책으로 하단 탭을 숨긴다. 상담사 전용 GNB를 새로 만들지는 않는다.
+  'counselor-home',
 ]
 
 const activeIndex = computed(() =>

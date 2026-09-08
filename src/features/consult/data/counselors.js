@@ -148,6 +148,79 @@ export const myConsultations = [
   },
 ]
 
+// "YYYY-MM-DD" 문자열로 오늘/이후 날짜를 계산한다. 실제 실행일과 무관하게 상담사
+// 홈의 오늘의 상담/다가오는 상담 구분이 항상 맞게 보이도록, 고정 날짜 대신 현재
+// 시각 기준으로 날짜를 만든다 - 새 날짜 라이브러리는 쓰지 않는다.
+function formatDateKey(date) {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+function addDays(base, days) {
+  const result = new Date(base)
+  result.setDate(result.getDate() + days)
+  return result
+}
+const today = new Date()
+
+// 상담사 홈(/counselor) Mock. 상담사 입장에서 자신에게 예약된 상담 목록이라 여러
+// 사용자가 섞여 있다 - reservationId 2는 사용자 쪽 myConsultations[1](이서현 · 저축
+// 상담 · IN_PROGRESS)과 같은 예약이라 chatMessages[2]의 기존 대화가 그대로 이어진다.
+// 나머지는 상담사 홈 전용으로 새로 추가한 예약(다른 사용자)이라 아직 대화가 없다.
+export const counselorConsultations = [
+  {
+    reservationId: 2,
+    counselorId: 2,
+    userId: 101,
+    userName: '김유진',
+    category: 'SAVING',
+    reservationDate: '2026-09-06',
+    reservationTime: '16:00',
+    status: 'IN_PROGRESS',
+  },
+  {
+    reservationId: 4,
+    counselorId: 2,
+    userId: 102,
+    userName: '박서연',
+    category: 'HOUSING',
+    reservationDate: formatDateKey(today),
+    reservationTime: '10:00',
+    status: 'RESERVED',
+  },
+  {
+    reservationId: 5,
+    counselorId: 2,
+    userId: 103,
+    userName: '최민지',
+    category: 'LOAN',
+    reservationDate: formatDateKey(today),
+    reservationTime: '15:00',
+    status: 'RESERVED',
+  },
+  {
+    reservationId: 6,
+    counselorId: 2,
+    userId: 104,
+    userName: '정하늘',
+    category: 'GOAL_SETTING',
+    reservationDate: formatDateKey(addDays(today, 1)),
+    reservationTime: '11:00',
+    status: 'RESERVED',
+  },
+  {
+    reservationId: 7,
+    counselorId: 2,
+    userId: 105,
+    userName: '이도윤',
+    category: 'ASSET_MANAGEMENT',
+    reservationDate: formatDateKey(addDays(today, 3)),
+    reservationTime: '14:00',
+    status: 'RESERVED',
+  },
+]
+
 // 채팅 화면(/consult/chat/:reservationId) Mock 메시지. key는 myConsultations[].reservationId다.
 // 상담사 이름/이미지는 counselors에서 counselorId로 조회해서 쓰므로 여기에 다시 넣지 않는다.
 // 실제 백엔드가 생기면 GET /chat/{reservationId}/messages 응답으로 이 자리를 대체하면 된다.

@@ -11,6 +11,7 @@ import { formatMonthDayWeekdayKo } from '@/shared/utils/formatter'
 import {
   counselors,
   myConsultations,
+  counselorConsultations,
   chatMessages,
   chatUserProfile,
 } from '@/features/consult/data/counselors'
@@ -23,9 +24,21 @@ const props = defineProps({
 
 const router = useRouter()
 
-const reservation = computed(
-  () => myConsultations.find((item) => item.reservationId === Number(props.reservationId)) ?? null,
-)
+// 상담사 홈(/counselor)에서 들어온 채팅만 router state로 viewerRole='COUNSELOR'를
+// 넘긴다(예약 화면들이 category/consultationType을 넘기는 것과 같은 방식) - 그 값이
+// 없으면(사용자 쪽 '내 상담 → 상담 입장' 흐름) 기존처럼 기본 역할(CURRENT_ROLE)로 본다.
+// 이 화면 하나로 두 역할을 모두 표현할 수 있어야 해서, 이후 로직은 모두 이 값 하나만
+// 기준으로 판단한다.
+const currentRole = window.history.state?.viewerRole === 'COUNSELOR' ? 'COUNSELOR' : CURRENT_ROLE
+
+// USER는 자신의 예약 목록(myConsultations)에서, COUNSELOR는 상담사 홈 목록
+// (counselorConsultations)에서 같은 reservationId를 찾는다 - 두 목록에 겹치는
+// reservationId(예: 2)는 같은 상담을 가리키므로 채팅 내용도 자연히 같이 이어진다.
+const reservation = computed(() => {
+  const id = Number(props.reservationId)
+  const source = currentRole === 'COUNSELOR' ? counselorConsultations : myConsultations
+  return source.find((item) => item.reservationId === id) ?? null
+})
 const counselor = computed(() =>
   reservation.value
     ? (counselors.find((item) => item.id === reservation.value.counselorId) ?? null)
@@ -38,11 +51,14 @@ const counselor = computed(() =>
 const status = ref(reservation.value?.status === 'COMPLETED' ? 'COMPLETED' : 'IN_PROGRESS')
 const statusMeta = computed(() => CONSULTATION_STATUS_META[status.value])
 
-// 상단 헤더에 보여줄 상대방. currentRole이 USER면 상담사가, COUNSELOR면 사용자가
-// 상대다 - 이 값만 바뀌면 같은 ChatView를 두 역할이 그대로 재사용할 수 있다.
+// 상단 헤더에 보여줄 상대방. currentRole이 USER면 상담사가, COUNSELOR면 이 상담을
+// 예약한 사용자가 상대다 - 이 값만 바뀌면 같은 ChatView를 두 역할이 그대로 재사용할
+// 수 있다. 상담사 홈 목록에 없는 reservationId로 들어온 경우에만 데모용 기본 프로필
+// (chatUserProfile)로 대체한다.
 const opponent = computed(() => {
-  if (CURRENT_ROLE === 'COUNSELOR') {
-    return { image: chatUserProfile.image, displayName: chatUserProfile.name }
+  if (currentRole === 'COUNSELOR') {
+    const userName = reservation.value?.userName ?? chatUserProfile.name
+    return { image: chatUserProfile.image, displayName: userName }
   }
   const name = counselor.value?.name ?? '상담사'
   return { image: counselor.value?.image ?? '', displayName: `${name} 상담사` }
@@ -93,7 +109,7 @@ function handleSend() {
 
   messages.value.push({
     messageId: nextId,
-    senderType: CURRENT_ROLE,
+    senderType: currentRole,
     content: draft.value.trim(),
     createdAt: new Date().toISOString(),
   })
@@ -111,14 +127,19 @@ function handleEndConsultation() {
   router.push({ name: 'consult-report', params: { reservationId: props.reservationId } })
 }
 
-function goToMyConsultations() {
-  router.push({ name: 'consult-my' })
+// 사용자는 내 상담으로, 상담사는 상담사 홈으로 - 들어온 쪽으로 그대로 돌아간다.
+function goBack() {
+  if (currentRole === 'COUNSELOR') {
+    router.push({ name: 'counselor-home' })
+  } else {
+    router.push({ name: 'consult-my' })
+  }
 }
 </script>
 
 <template>
   <div class="consult-chat-view">
-    <AppHeader title-align="start" @back="goToMyConsultations">
+    <AppHeader title-align="start" @back="goBack">
       <template #title>
         <div class="consult-chat-view__opponent">
           <div class="consult-chat-view__avatar">
@@ -157,7 +178,7 @@ function goToMyConsultations() {
             v-for="message in group.messages"
             :key="message.messageId"
             :message="message"
-            :is-mine="message.senderType === CURRENT_ROLE"
+            :is-mine="message.senderType === currentRole"
           />
         </template>
         <div ref="messagesEndRef" class="consult-chat-view__messages-end" />
