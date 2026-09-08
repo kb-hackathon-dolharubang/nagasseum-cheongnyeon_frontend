@@ -14,3 +14,17 @@ export async function getUserConsultations(userId) {
   const { data } = await httpClient.get(`/api/v1/consultations/users/${userId}`)
   return data.data
 }
+
+// 채팅 화면(/consult/chat/:reservationId) 메시지 조회. 응답 data는 createdAt 오름차순
+// 메시지 배열이다. 최초 진입 시 한 번, 이후 polling으로 반복 호출된다.
+export async function getConsultationMessages(reservationId) {
+  const { data } = await httpClient.get(`/api/v1/consultations/${reservationId}/messages`)
+  return data.data
+}
+
+// 채팅 메시지 전송. payload: { senderType, content }. 성공하면 백엔드가 저장한 메시지
+// (messageId 포함)를 그대로 돌려준다 - 화면에서 임시 id를 만들지 않고 이 응답을 쓴다.
+export async function sendConsultationMessage(reservationId, payload) {
+  const { data } = await httpClient.post(`/api/v1/consultations/${reservationId}/messages`, payload)
+  return data.data
+}

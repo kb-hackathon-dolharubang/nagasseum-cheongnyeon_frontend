@@ -1,5 +1,5 @@
 <script setup>
-import { computed, nextTick, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import AppHeader from '@/shared/components/molecules/AppHeader.vue'
@@ -12,17 +12,25 @@ import {
   counselors,
   myConsultations,
   counselorConsultations,
-  chatMessages,
   chatUserProfile,
 } from '@/features/consult/data/counselors'
 import { CONSULTATION_STATUS_META } from '@/features/consult/constants/status'
 import { CURRENT_ROLE } from '@/features/consult/constants/role'
+import { getConsultationMessages, sendConsultationMessage } from '@/features/consult/api/consultApi'
 
 const props = defineProps({
   reservationId: { type: String, required: true },
 })
 
 const router = useRouter()
+
+// route param을 한 번만 검증해서 이후 API 호출들이 전부 이 값을 쓴다 - 잘못된
+// reservationId(숫자가 아니거나 0 이하)면 null로 두고 GET/POST/polling을 아예 시작하지
+// 않는다.
+const reservationIdNumber = computed(() => {
+  const id = Number(props.reservationId)
+  return Number.isInteger(id) && id > 0 ? id : null
+})
 
 // 상담사 홈(/counselor)에서 들어온 채팅만 router state로 viewerRole='COUNSELOR'를
 // 넘긴다(예약 화면들이 category/consultationType을 넘기는 것과 같은 방식) - 그 값이
@@ -34,10 +42,12 @@ const currentRole = window.history.state?.viewerRole === 'COUNSELOR' ? 'COUNSELO
 // USER는 자신의 예약 목록(myConsultations)에서, COUNSELOR는 상담사 홈 목록
 // (counselorConsultations)에서 같은 reservationId를 찾는다 - 두 목록에 겹치는
 // reservationId(예: 2)는 같은 상담을 가리키므로 채팅 내용도 자연히 같이 이어진다.
+// (이 조회는 상대방 이름/상담 상태 표시용으로만 쓰이는 기존 로직이라 이번 작업(메시지
+// API 연동) 범위 밖이라 그대로 둔다.)
 const reservation = computed(() => {
-  const id = Number(props.reservationId)
+  if (!reservationIdNumber.value) return null
   const source = currentRole === 'COUNSELOR' ? counselorConsultations : myConsultations
-  return source.find((item) => item.reservationId === id) ?? null
+  return source.find((item) => item.reservationId === reservationIdNumber.value) ?? null
 })
 const counselor = computed(() =>
   reservation.value
@@ -64,9 +74,39 @@ const opponent = computed(() => {
   return { image: counselor.value?.image ?? '', displayName: `${name} 상담사` }
 })
 
-// 원본 Mock(chatMessages)은 그대로 두고, 이 화면에서 주고받는 메시지는 복사본에서만
-// 다룬다 - 다른 상담 화면들의 consultationData와 같은 원칙.
-const messages = ref([...(chatMessages[Number(props.reservationId)] ?? [])])
+/* ── 메시지 조회 / polling ─────────────────────────────────────
+   Mock chatMessages 대신 실제 메시지 API를 쓴다(Mock 파일 자체는 다른 화면 확인용으로
+   그대로 둔다). GET 응답 전체를 항상 최신 source of truth로 보고 배열을 통째로
+   교체한다 - 별도 diff/merge 없이 그 자체로 polling 중복도 생기지 않는다. */
+
+const messages = ref([])
+const isLoadingMessages = ref(true)
+const loadMessagesError = ref(false)
+
+async function fetchMessages({ background = false } = {}) {
+  if (!reservationIdNumber.value) return
+
+  if (!background) isLoadingMessages.value = true
+  const previousCount = messages.value.length
+
+  try {
+    const result = await getConsultationMessages(reservationIdNumber.value)
+    messages.value = result ?? []
+    loadMessagesError.value = false
+    // polling 중에는 새 메시지가 실제로 늘어났을 때만 최신 메시지로 스크롤한다 -
+    // 매번 강제로 내리지 않는다. 최초 진입 스크롤은 onMounted에서 따로 처리한다.
+    if (background && messages.value.length > previousCount) {
+      nextTick(scrollToBottom)
+    }
+  } catch {
+    if (!background) loadMessagesError.value = true
+  } finally {
+    if (!background) isLoadingMessages.value = false
+  }
+}
+
+let pollTimer = null
+const POLL_INTERVAL_MS = 2500
 
 function toDateKey(createdAt) {
   return createdAt.slice(0, 10)
@@ -96,25 +136,45 @@ function scrollToBottom() {
   messagesEndRef.value?.scrollIntoView({ block: 'end' })
 }
 
-onMounted(() => {
-  scrollToBottom()
+onMounted(async () => {
+  await fetchMessages()
+  nextTick(scrollToBottom)
+
+  // 채팅 화면에 있는 동안만 폴링한다 - 화면을 벗어나면 onBeforeUnmount에서 반드시 끈다.
+  pollTimer = setInterval(() => fetchMessages({ background: true }), POLL_INTERVAL_MS)
 })
 
-function handleSend() {
-  if (!canSend.value) return
+onBeforeUnmount(() => {
+  if (pollTimer) clearInterval(pollTimer)
+})
 
-  const nextId = messages.value.length
-    ? Math.max(...messages.value.map((item) => item.messageId)) + 1
-    : 1
+const isSending = ref(false)
+const sendError = ref('')
 
-  messages.value.push({
-    messageId: nextId,
-    senderType: currentRole,
-    content: draft.value.trim(),
-    createdAt: new Date().toISOString(),
-  })
-  draft.value = ''
-  nextTick(scrollToBottom)
+async function handleSend() {
+  if (!canSend.value || isSending.value || !reservationIdNumber.value) return
+
+  const content = draft.value.trim()
+  isSending.value = true
+  sendError.value = ''
+
+  try {
+    const sentMessage = await sendConsultationMessage(reservationIdNumber.value, {
+      senderType: currentRole,
+      content,
+    })
+    // polling이 같은 메시지를 먼저 가져왔을 수 있어 messageId로 한 번 더 확인한 뒤에만 추가한다.
+    if (sentMessage && !messages.value.some((item) => item.messageId === sentMessage.messageId)) {
+      messages.value.push(sentMessage)
+    }
+    draft.value = ''
+    nextTick(scrollToBottom)
+  } catch {
+    // 실패하면 입력한 내용을 지우지 않는다(잃지 않기) - 화면에는 반영하지 않는다.
+    sendError.value = '메시지를 보내지 못했습니다. 다시 시도해주세요.'
+  } finally {
+    isSending.value = false
+  }
 }
 
 const isEndModalOpen = ref(false)
@@ -170,33 +230,44 @@ function goBack() {
 
     <template v-if="reservation">
       <div class="consult-chat-view__messages">
-        <template v-for="group in messageGroups" :key="group.dateKey">
-          <div class="consult-chat-view__date-divider">
-            <span>{{ formatMonthDayWeekdayKo(group.dateKey) }}</span>
-          </div>
-          <ChatMessage
-            v-for="message in group.messages"
-            :key="message.messageId"
-            :message="message"
-            :is-mine="message.senderType === currentRole"
-          />
+        <template v-if="messages.length">
+          <template v-for="group in messageGroups" :key="group.dateKey">
+            <div class="consult-chat-view__date-divider">
+              <span>{{ formatMonthDayWeekdayKo(group.dateKey) }}</span>
+            </div>
+            <ChatMessage
+              v-for="message in group.messages"
+              :key="message.messageId"
+              :message="message"
+              :is-mine="message.senderType === currentRole"
+            />
+          </template>
         </template>
+        <p v-else-if="loadMessagesError" class="consult-chat-view__notice-empty">
+          메시지를 불러오지 못했어요.
+        </p>
+        <p v-else-if="!isLoadingMessages" class="consult-chat-view__notice-empty">
+          상담을 시작해보세요.
+        </p>
         <div ref="messagesEndRef" class="consult-chat-view__messages-end" />
       </div>
 
-      <form class="consult-chat-view__composer" @submit.prevent="handleSend">
-        <template v-if="status !== 'COMPLETED'">
-          <textarea
-            v-model="draft"
-            class="consult-chat-view__input"
-            rows="1"
-            placeholder="메시지를 입력해주세요"
-            @keydown.enter.exact.prevent="handleSend"
-          />
-          <BaseButton type="submit" size="md" :disabled="!canSend">전송</BaseButton>
-        </template>
-        <p v-else class="consult-chat-view__ended-notice">상담이 종료되었습니다.</p>
-      </form>
+      <div class="consult-chat-view__composer">
+        <p v-if="sendError" class="consult-chat-view__composer-error">{{ sendError }}</p>
+        <form class="consult-chat-view__composer-row" @submit.prevent="handleSend">
+          <template v-if="status !== 'COMPLETED'">
+            <textarea
+              v-model="draft"
+              class="consult-chat-view__input"
+              rows="1"
+              placeholder="메시지를 입력해주세요"
+              @keydown.enter.exact.prevent="handleSend"
+            />
+            <BaseButton type="submit" size="md" :disabled="!canSend || isSending">전송</BaseButton>
+          </template>
+          <p v-else class="consult-chat-view__ended-notice">상담이 종료되었습니다.</p>
+        </form>
+      </div>
     </template>
 
     <p v-else class="consult-chat-view__notice-empty">상담 정보를 찾을 수 없어요.</p>
@@ -318,8 +389,8 @@ function goBack() {
   left: 50%;
   z-index: 8;
   display: flex;
-  align-items: flex-end;
-  gap: 8px;
+  flex-direction: column;
+  gap: 4px;
   width: calc(100% - 32px);
   max-width: 368px;
   box-sizing: border-box;
@@ -329,6 +400,21 @@ function goBack() {
   background: var(--color-app-bg, #111111);
   border-top: 1px solid var(--color-border, #262626);
   transform: translateX(-50%);
+}
+
+/* 입력창+전송 버튼 한 줄. sendError가 없을 때는 기존과 완전히 같은 모습이고,
+   있을 때만 위에 에러 문구 한 줄이 추가된다. */
+.consult-chat-view__composer-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.consult-chat-view__composer-error {
+  margin: 0;
+  font-size: 11.5px;
+  text-align: center;
+  color: var(--color-point, #c1442e);
 }
 
 .consult-chat-view__input {
