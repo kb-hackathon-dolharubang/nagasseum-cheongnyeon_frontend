@@ -112,11 +112,27 @@ function toDateKey(createdAt) {
   return createdAt.slice(0, 10)
 }
 
+// 실제 메시지가 하나도 없을 때, 상담사가 미리 인사를 건넨 것처럼 화면에만 보여주는
+// 가짜 첫 메시지다 - DB에 저장하지 않으므로 목록/폴링에도 안 잡히고, 첫 메시지 전송 시
+// RESERVED -> IN_PROGRESS로 바뀌는 백엔드 규칙에도 영향을 주지 않는다.
+const introMessage = computed(() => ({
+  messageId: 'intro',
+  senderType: 'COUNSELOR',
+  content: `안녕하세요! ${counselor.value?.name ?? '상담사'} 상담사입니다. 편하게 말씀해주세요.`,
+  createdAt: `${reservation.value?.reservationDate ?? new Date().toISOString().slice(0, 10)}T00:00:00`,
+}))
+
+const displayMessages = computed(() => {
+  if (messages.value.length > 0) return messages.value
+  if (isLoadingMessages.value || loadMessagesError.value) return []
+  return [introMessage.value]
+})
+
 // 날짜가 바뀔 때만 구분선을 새로 만든다. Mock 메시지가 모두 같은 날짜면 구분선은
 // 한 번만 표시된다 - 복잡한 그룹핑 없이 순서대로 훑으며 직전 그룹과 날짜만 비교한다.
 const messageGroups = computed(() => {
   const groups = []
-  for (const message of messages.value) {
+  for (const message of displayMessages.value) {
     const dateKey = toDateKey(message.createdAt)
     const lastGroup = groups[groups.length - 1]
     if (lastGroup?.dateKey === dateKey) {
@@ -228,9 +244,9 @@ function goBack() {
       </template>
     </AppHeader>
 
-    <template v-if="reservation">
+    <template v-if="reservationIdNumber">
       <div class="consult-chat-view__messages">
-        <template v-if="messages.length">
+        <template v-if="displayMessages.length">
           <template v-for="group in messageGroups" :key="group.dateKey">
             <div class="consult-chat-view__date-divider">
               <span>{{ formatMonthDayWeekdayKo(group.dateKey) }}</span>
@@ -245,9 +261,6 @@ function goBack() {
         </template>
         <p v-else-if="loadMessagesError" class="consult-chat-view__notice-empty">
           메시지를 불러오지 못했어요.
-        </p>
-        <p v-else-if="!isLoadingMessages" class="consult-chat-view__notice-empty">
-          상담을 시작해보세요.
         </p>
         <div ref="messagesEndRef" class="consult-chat-view__messages-end" />
       </div>
