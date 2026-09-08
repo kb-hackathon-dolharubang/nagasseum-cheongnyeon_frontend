@@ -2,7 +2,7 @@
 import { onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 
-import BaseClimbingLoader from '@/shared/components/atoms/feedback/ClimbingLoader/BaseClimbingLoader.vue'
+import BaseClimbingLoader from '@/shared/components/atoms/feedback/BaseClimbingLoader.vue'
 
 import { FLOW_CONTEXT, useAssetStore } from '@/features/asset/store/assetStore'
 

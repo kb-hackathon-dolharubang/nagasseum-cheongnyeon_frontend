@@ -4,9 +4,9 @@ import { useRouter } from 'vue-router'
 
 import AppHeader from '@/shared/components/molecules/AppHeader.vue'
 import BaseButton from '@/shared/components/atoms/base/button/BaseButton.vue'
-import BaseModal from '@/shared/components/atoms/feedback/Modal/BaseModal.vue'
+import BaseModal from '@/shared/components/atoms/feedback/BaseModal.vue'
 import BaseInputField from '@/shared/components/molecules/BaseInputField.vue'
-import BaseSkeleton from '@/shared/components/atoms/feedback/Skeleton/BaseSkeleton.vue'
+import BaseSkeleton from '@/shared/components/atoms/feedback/BaseSkeleton.vue'
 import { formatNumber } from '@/shared/utils/formatter'
 
 import AssetTotalCard from '@/features/asset/components/AssetTotalCard.vue'
