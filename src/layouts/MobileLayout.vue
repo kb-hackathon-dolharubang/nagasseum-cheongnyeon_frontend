@@ -7,7 +7,8 @@ import BaseBottomNav from '@/shared/components/atoms/navigation/BottomNav/BaseBo
 import {
   HomeIcon,
   GoalIcon,
-  PolicyIcon,
+  PolicyIcon as CompareIcon,
+  ConsultIcon,
   MyIcon,
 } from '@/shared/components/atoms/navigation/BottomNav/icons'
 import { fetchActiveGoal } from '@/features/goal/api/goalApi'
@@ -20,7 +21,8 @@ const router = useRouter()
 const navItems = [
   { label: '홈', icon: HomeIcon, to: '/home' },
   { label: '목표', icon: GoalIcon, matchNames: ['goal-detail', 'goal-empty'] },
-  { label: '정책', icon: PolicyIcon, to: '/policy' },
+  { label: '비교', icon: CompareIcon, to: '/compare' },
+  { label: '상담', icon: ConsultIcon, to: '/consult' },
   { label: '마이', icon: MyIcon, to: '/my' },
 ]
 
@@ -34,6 +36,18 @@ const HIDDEN_NAV_ROUTE_NAMES = [
   'edit-info',
   'asset-link-additional',
   'asset-detail',
+  // 예약 흐름(일정 선택 → 상담 정보 → 예약 완료)과 내 상담, 그리고 내 상담에서
+  // 이어지는 채팅/리포트는 상담 탭에서 벗어난 하위 화면이라, 다른 상세 화면들과
+  // 같이 하단 탭을 숨긴다.
+  'consult-reservation',
+  'consult-reservation-info',
+  'consult-my',
+  'consult-reservation-complete',
+  'consult-chat',
+  'consult-report',
+  // 상담사 홈은 사용자용 GNB(홈/자산/목표/상담/MY)와 무관한 별도 진입점이라, 같은
+  // 정책으로 하단 탭을 숨긴다. 상담사 전용 GNB를 새로 만들지는 않는다.
+  'counselor-home',
 ]
 
 const activeIndex = computed(() =>

@@ -37,11 +37,34 @@ export function formatYearMonthDot(date) {
   return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}`
 }
 
+// "2026-09-09" -> "9월 9일 수요일" (상담 예약처럼 요일까지 보여줘야 하는 특정 날짜 표기용)
+export function formatMonthDayWeekdayKo(date) {
+  return new Intl.DateTimeFormat('ko-KR', {
+    month: 'long',
+    day: 'numeric',
+    weekday: 'long',
+  }).format(new Date(date))
+}
+
+// "2031-08" 또는 "2031.08" -> "2031년 8월". new Date()로 파싱하면 '.'구분 문자열은
+// 브라우저마다 Invalid Date가 될 수 있어(비표준 포맷), 문자열을 직접 나눠 처리한다.
+export function formatYearMonthFlexibleKo(value) {
+  const [year, month] = String(value).split(/[-.]/)
+  return `${year}년 ${Number(month)}월`
+}
+
 // "2026-08-02T21:40:00+09:00" -> "2026.08.02 21:40" (자산 갱신 시각처럼 날짜+시각을 같이 보여줄 때 사용)
 export function formatDateTimeDot(date) {
   const d = new Date(date)
   const pad = (n) => String(n).padStart(2, '0')
   return `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+// "2026-09-09T14:00:00" -> "14:00" (채팅 메시지처럼 시:분만 보조 정보로 보여줄 때 사용)
+export function formatTimeKo(date) {
+  const d = new Date(date)
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
 // "9.3억" 형태로 축약 표기 (억 단위 미만은 소수 첫째 자리까지, 불필요한 0은 생략)

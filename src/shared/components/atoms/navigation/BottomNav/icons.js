@@ -54,3 +54,18 @@ export const MyIcon = {
       }),
     ]),
 }
+
+export const ConsultIcon = {
+  render: () =>
+    h('svg', { viewBox: '0 0 17 17', fill: 'none' }, [
+      h('path', {
+        d: 'M2.5 4H14.5V11H8.5L5 14V11H2.5V4Z',
+        stroke: 'currentColor',
+        'stroke-width': '1.4',
+        'stroke-linejoin': 'round',
+      }),
+      h('circle', { cx: '5.5', cy: '7.5', r: '0.7', fill: 'currentColor' }),
+      h('circle', { cx: '8.5', cy: '7.5', r: '0.7', fill: 'currentColor' }),
+      h('circle', { cx: '11.5', cy: '7.5', r: '0.7', fill: 'currentColor' }),
+    ]),
+}

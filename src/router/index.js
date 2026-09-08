@@ -11,6 +11,8 @@ import { compareRoutes } from '@/router/routes/compare.routes'
 import { homeRoutes } from '@/router/routes/home.routes'
 import { goalRoutes } from '@/router/routes/goal.routes'
 import { memberRoutes } from '@/router/routes/member.routes'
+import { consultRoutes } from '@/router/routes/consult.routes'
+import { counselorRoutes } from '@/router/routes/counselor.routes'
 import { policyRoutes } from '@/router/routes/policy.routes'
 
 const AUTH_REQUIRED_ROUTE_NAMES = [
@@ -25,6 +27,7 @@ const AUTH_REQUIRED_ROUTE_NAMES = [
   'policy',
   'my',
   'edit-info',
+  'consult',
 ]
 
 // 로컬 개발 전용. 각 화면을 로그인 없이 바로 확인하기 위한 우회이며, 프로덕션 빌드에서는 반드시 꺼져 있어야 한다.
@@ -47,6 +50,8 @@ const routes = [
       ...memberRoutes,
       ...assetDetailRoutes,
       ...assetManagementRoutes,
+      ...consultRoutes,
+      ...counselorRoutes,
     ],
   },
   {
