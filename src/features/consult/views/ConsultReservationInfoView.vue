@@ -9,12 +9,9 @@ import BaseChipGroup from '@/shared/components/atoms/form/ChipGroup/BaseChipGrou
 import ReservationStepIndicator from '@/features/consult/components/ReservationStepIndicator.vue'
 import ConsultationInfoCard from '@/features/consult/components/ConsultationInfoCard.vue'
 import ConsultationInfoSheet from '@/features/consult/components/ConsultationInfoSheet.vue'
-import {
-  counselors,
-  recentDiagnosisGoal,
-  generalConsultInfo,
-} from '@/features/consult/data/counselors'
+import { counselors } from '@/features/consult/data/counselors'
 import { CATEGORY_OPTIONS, CATEGORY_LABELS } from '@/features/consult/constants/categories'
+import { buildConsultInfo } from '@/features/consult/utils/consultInfo'
 
 const props = defineProps({
   counselorId: { type: String, required: true },
@@ -76,31 +73,10 @@ function toggleCategoryEdit() {
    원본 서비스 데이터(recentDiagnosisGoal/generalConsultInfo Mock)는 절대 바꾸지 않는다.
    이 화면(그리고 상담 정보 Bottom Sheet)이 다루는 값은 그 원본을 복사해 만든 별도의
    "상담용" 상태(consultationData)뿐이다 - Bottom Sheet에서 무엇을 고치든 서비스에
-   저장된 원본 자산/목표 데이터는 그대로 남는다. */
+   저장된 원본 자산/목표 데이터는 그대로 남는다. 초기값을 만드는 로직은 상담 리포트
+   화면과 공유하기 위해 buildConsultInfo로 뽑아뒀다. */
 
-function buildInitialConsultationData() {
-  if (consultationType === 'GOAL_DIAGNOSIS') {
-    return {
-      housingPreference: { ...recentDiagnosisGoal.originalCondition },
-      currentAsset: generalConsultInfo.currentAsset ?? null,
-      monthlySaving: generalConsultInfo.monthlySaving ?? null,
-      targetDate: recentDiagnosisGoal.targetDate ?? null,
-      loanPreference: generalConsultInfo.loanPreference ?? null,
-    }
-  }
-
-  return {
-    housingPreference: generalConsultInfo.housingPreference
-      ? { ...generalConsultInfo.housingPreference }
-      : null,
-    currentAsset: generalConsultInfo.currentAsset ?? null,
-    monthlySaving: generalConsultInfo.monthlySaving ?? null,
-    targetDate: generalConsultInfo.targetDate ?? null,
-    loanPreference: generalConsultInfo.loanPreference ?? null,
-  }
-}
-
-const consultationData = reactive(buildInitialConsultationData())
+const consultationData = reactive(buildConsultInfo(consultationType))
 const isInfoSheetOpen = ref(false)
 
 const isInfoComplete = computed(

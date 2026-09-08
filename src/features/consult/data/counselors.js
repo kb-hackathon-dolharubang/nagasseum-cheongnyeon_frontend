@@ -104,12 +104,15 @@ export const myConsultation = {
 // 내 상담(/consult/my) 목록 Mock. 상담사 정보는 중복 저장하지 않고 counselorId로만
 // counselors를 조회해서 쓴다. status는 RESERVED(예약 완료) / IN_PROGRESS(상담 중) /
 // COMPLETED(상담 완료) 3개만 쓴다 - 승인 대기·거절·노쇼 같은 상태는 우리 서비스의
-// "시간 선택 = 바로 확정" 정책상 없다.
+// "시간 선택 = 바로 확정" 정책상 없다. consultationType은 예약 화면에서 어떤 방식으로
+// 들어왔는지를 그대로 남긴 값으로, 상담 리포트가 "상담 기준 정보"를 만들 때
+// buildConsultInfo(consultationType)에 그대로 넘겨 쓴다.
 export const myConsultations = [
   {
     reservationId: 1,
     counselorId: 1,
     category: 'HOUSING',
+    consultationType: 'GOAL_DIAGNOSIS',
     reservationDate: '2026-09-09',
     reservationTime: '14:00',
     status: 'RESERVED',
@@ -118,6 +121,7 @@ export const myConsultations = [
     reservationId: 2,
     counselorId: 2,
     category: 'SAVING',
+    consultationType: 'GENERAL',
     reservationDate: '2026-09-06',
     reservationTime: '16:00',
     status: 'IN_PROGRESS',
@@ -126,6 +130,7 @@ export const myConsultations = [
     reservationId: 3,
     counselorId: 3,
     category: 'ASSET_MANAGEMENT',
+    consultationType: 'GENERAL',
     reservationDate: '2026-09-05',
     reservationTime: '13:00',
     status: 'COMPLETED',
@@ -191,6 +196,81 @@ export const chatMessages = {
 export const chatUserProfile = {
   name: '김OO',
   image: '',
+}
+
+// AI 상담 리포트(/consult/report/:reservationId) Mock. key는 myConsultations[].reservationId다.
+// 여기에는 AI가 실제로 만들어내는 값만 둔다(summary/mainConcerns/discussionPoints/result/
+// recommendations/nextActions) - 상담사·예약 일시·분야, 그리고 "상담 기준 정보"(희망 주거
+// 조건/현재 자산/월 저축 가능액/목표 시점, 진단 결과)는 이미 counselors/myConsultations/
+// recentDiagnosisGoal/generalConsultInfo에 있는 값을 그대로 재사용하므로 여기서 다시
+// 만들지 않는다. 필드 구조는 추후 실제 AI Response와 그대로 맞바꿀 수 있게 유지한다.
+// reservationId 1처럼 이 객체에 키가 없으면 "아직 AI가 만들지 않은 상태"로 보고
+// 화면에서 생성 중(GENERATING)으로 처리한다.
+export const consultationReports = {
+  2: {
+    status: 'COMPLETED',
+    summary:
+      '이번 상담에서는 현재 자산과 희망 주거 조건을 기준으로 목표 시점까지 저축 계획을 함께 점검했습니다. 지금 속도로는 목표 시점에 다소 못 미칠 수 있어 월 저축액 조정이 필요하다는 점을 확인했습니다.',
+    mainConcerns: [
+      '지금 저축 속도로 목표 시점을 맞출 수 있는지',
+      '월 저축액을 얼마나 늘려야 하는지',
+    ],
+    discussionPoints: [
+      '현재 자산과 목표 필요 금액 비교',
+      '희망 주거 조건의 예상 비용 확인',
+      '목표 시점까지 남은 기간과 필요 저축액 계산',
+      '정책 대출 활용 가능성 확인',
+    ],
+    result:
+      '현재 조건을 유지하려면 월 저축액을 늘리거나 목표 시점을 조정하는 방향이 현실적이라는 결론을 확인했습니다.',
+    recommendations: [
+      '월 저축액 조정 검토',
+      '목표 시점 조정 검토',
+      '정책 대출 활용 가능 여부 확인',
+    ],
+    nextActions: [
+      {
+        title: '월 저축 계획을 조정해보세요',
+        description: '현재 월 70만원에서 상향 조정하는 방안을 검토해보세요.',
+        actionType: 'SAVING',
+      },
+      {
+        title: '목표 조건을 다시 확인해보세요',
+        description: '상담 결과를 반영해 목표 시점이나 주거 조건을 수정할 수 있습니다.',
+        actionType: 'GOAL',
+      },
+      {
+        title: '대출 가능 여부를 확인해보세요',
+        description: '현재 조건에서 활용 가능한 정책 대출이 있는지 확인해보세요.',
+        actionType: 'LOAN',
+      },
+    ],
+  },
+  3: {
+    status: 'COMPLETED',
+    summary:
+      '이번 상담에서는 현재 보유 자산 구성과 목표 시점을 함께 검토했습니다. 자산 배분을 조정하면 목표 달성 시점을 앞당길 여지가 있다는 점을 확인했습니다.',
+    mainConcerns: ['현재 자산 배분이 목표에 적절한지', '목표 시점을 앞당길 수 있는 방법이 있는지'],
+    discussionPoints: [
+      '현재 자산 구성과 목표 필요 금액 비교',
+      '희망 주거 조건의 예상 비용 확인',
+      '자산 배분 조정 시 기대 효과 검토',
+    ],
+    result: '현재 자산 배분을 일부 조정하면 목표 시점을 앞당길 수 있다는 결론을 확인했습니다.',
+    recommendations: ['자산 배분 조정 검토', '월 저축액 유지 여부 확인'],
+    nextActions: [
+      {
+        title: '목표 조건을 다시 확인해보세요',
+        description: '상담 결과를 반영해 목표 시점이나 주거 조건을 수정할 수 있습니다.',
+        actionType: 'GOAL',
+      },
+      {
+        title: '저축 계획을 확인해보세요',
+        description: '현재 월 저축액이 목표에 적절한지 다시 확인해보세요.',
+        actionType: 'SAVING',
+      },
+    ],
+  },
 }
 
 // 상담사별 예약 가능 일정. 실제 스케줄 API가 생기면 counselorId로 조회하도록 바꾸면 된다.
