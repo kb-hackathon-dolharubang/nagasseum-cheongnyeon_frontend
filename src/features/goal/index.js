@@ -1,0 +1,6 @@
+export { default as GoalConditionStepsView } from '@/features/goal/views/GoalConditionStepsView.vue'
+export { default as GoalRecommendationsView } from '@/features/goal/views/GoalRecommendationsView.vue'
+export { default as RecommendationDetailView } from '@/features/goal/views/RecommendationDetailView.vue'
+export { default as GoalDetailView } from '@/features/goal/views/GoalDetailView.vue'
+export { default as GoalEmptyView } from '@/features/goal/views/GoalEmptyView.vue'
+export { useGoalStore } from '@/features/goal/store/goalStore'
