@@ -5,19 +5,31 @@ import { useRouter } from 'vue-router'
 import AppHeader from '@/shared/components/molecules/AppHeader.vue'
 import BaseButton from '@/shared/components/atoms/base/button/BaseButton.vue'
 import BaseBadge from '@/shared/components/atoms/base/badge/BaseBadge.vue'
+import BaseAlert from '@/shared/components/atoms/feedback/Alert/BaseAlert.vue'
 import BaseChipGroup from '@/shared/components/atoms/form/ChipGroup/BaseChipGroup.vue'
 import ReservationStepIndicator from '@/features/consult/components/ReservationStepIndicator.vue'
 import ConsultationInfoCard from '@/features/consult/components/ConsultationInfoCard.vue'
 import ConsultationInfoSheet from '@/features/consult/components/ConsultationInfoSheet.vue'
-import { counselors } from '@/features/consult/data/counselors'
-import { CATEGORY_OPTIONS, CATEGORY_LABELS } from '@/features/consult/constants/categories'
-import { buildConsultInfo } from '@/features/consult/utils/consultInfo'
+import { useAuthStore } from '@/features/auth'
+import { counselors, recentDiagnosisGoal } from '@/features/consult/data/counselors'
+import {
+  CATEGORY_OPTIONS,
+  CATEGORY_LABELS,
+  CATEGORY_API_VALUES,
+} from '@/features/consult/constants/categories'
+import {
+  buildConsultInfo,
+  toConsultInfoRequest,
+  toDiagnosisRequest,
+} from '@/features/consult/utils/consultInfo'
+import { createConsultationReservation } from '@/features/consult/api/consultApi'
 
 const props = defineProps({
   counselorId: { type: String, required: true },
 })
 
 const router = useRouter()
+const authStore = useAuthStore()
 
 const counselor = computed(
   () => counselors.find((item) => item.id === Number(props.counselorId)) ?? null,
@@ -100,24 +112,60 @@ function handleInfoSave(updated) {
 
 const canConfirm = computed(() => Boolean(selectedCategory.value) && isInfoComplete.value)
 
-function handleConfirm() {
-  if (!canConfirm.value) return
+const isSubmitting = ref(false)
+const submitError = ref('')
 
-  const payload = {
-    // 실제 예약 API가 생기면 POST 응답의 reservationId로 바뀐다. 지금은 확정 화면을
-    // 만들기 위한 임시 Mock 값이다.
-    reservationId: 1,
-    counselorId: Number(props.counselorId),
-    consultationType,
-    category: selectedCategory.value,
-    reservationDate: selectedDate,
-    reservationTime: selectedTime,
-    requestMessage: requestMessage.value.trim(),
+async function handleConfirm() {
+  // canConfirm은 기존 화면 validation(분야 선택 여부/필수 정보 입력 여부) 그대로다.
+  // isSubmitting은 응답을 기다리는 동안 버튼을 다시 눌러 중복 예약이 생기지 않게 막는다.
+  if (!canConfirm.value || isSubmitting.value) return
+
+  isSubmitting.value = true
+  submitError.value = ''
+
+  try {
+    const requestPayload = {
+      // userId는 하드코딩하지 않고 기존 로그인 사용자 store(authStore.user.id)에서
+      // 그대로 가져온다. 이 API만 예외적으로 memberId를 body에 명시해서 보내는
+      // 임시 MVP 구조라, 다른 API(goalApi 등)처럼 서버가 토큰에서 추출하지 않는다.
+      userId: authStore.user?.id ?? null,
+      counselorId: Number(props.counselorId),
+      consultationType,
+      // UI/다른 화면은 항상 프론트 내부 코드(GOAL_SETTING 등)를 쓰고, 서버로 보낼 때만
+      // 백엔드 enum(GOAL 등)으로 바꾼다.
+      category: CATEGORY_API_VALUES[selectedCategory.value] ?? selectedCategory.value,
+      reservationDate: selectedDate,
+      reservationTime: selectedTime,
+      requestMessage: requestMessage.value.trim() || null,
+      consultInfo: toConsultInfoRequest(consultationData),
+      diagnosis:
+        consultationType === 'GOAL_DIAGNOSIS' ? toDiagnosisRequest(recentDiagnosisGoal) : null,
+    }
+
+    const result = await createConsultationReservation(requestPayload)
+
+    // 예약 완료 화면은 지금과 같은 state 모양을 그대로 기대하므로, 화면을 건드리지 않고
+    // API 응답값(reservationId/reservationDate/reservationTime)만 그 자리에 채워 넣는다.
+    // "14:00:00" 형태로 올 수 있어 앞 5글자("14:00")만 쓴다 - 새 날짜 라이브러리 없이 처리.
+    const payload = {
+      reservationId: result.reservationId,
+      counselorId: Number(props.counselorId),
+      consultationType,
+      category: selectedCategory.value,
+      reservationDate: result.reservationDate ?? selectedDate,
+      reservationTime: (result.reservationTime ?? selectedTime ?? '').slice(0, 5),
+      requestMessage: requestMessage.value.trim(),
+    }
+
+    // 승인 절차 없이 바로 확정되는 정책이라, 이 화면으로 되돌아올 이유가 없어 push가 아닌
+    // replace로 이동한다(제출 화면과 입력 화면이 히스토리에 번갈아 쌓이지 않게 한다).
+    router.replace({ name: 'consult-reservation-complete', state: payload })
+  } catch {
+    // 실패하면 이 화면에 그대로 남는다 - 완료 화면으로 넘어가지 않는다.
+    submitError.value = '예약 중 문제가 발생했습니다. 다시 시도해주세요.'
+  } finally {
+    isSubmitting.value = false
   }
-
-  // 승인 절차 없이 바로 확정되는 정책이라, 이 화면으로 되돌아올 이유가 없어 push가 아닌
-  // replace로 이동한다(제출 화면과 입력 화면이 히스토리에 번갈아 쌓이지 않게 한다).
-  router.replace({ name: 'consult-reservation-complete', state: payload })
 }
 </script>
 
@@ -213,8 +261,11 @@ function handleConfirm() {
     <p v-else class="consult-reservation-info-view__notice-empty">상담사 정보를 찾을 수 없어요.</p>
 
     <div class="consult-reservation-info-view__footer">
-      <BaseButton size="lg" :disabled="!canConfirm" @click="handleConfirm">
-        예약 확정하기
+      <BaseAlert v-if="submitError" variant="error" class="consult-reservation-info-view__error">
+        {{ submitError }}
+      </BaseAlert>
+      <BaseButton size="lg" :disabled="!canConfirm || isSubmitting" @click="handleConfirm">
+        {{ isSubmitting ? '예약 확정 중...' : '예약 확정하기' }}
       </BaseButton>
       <p class="consult-reservation-info-view__confirm-notice">
         상담사 승인 없이 예약이 바로 확정됩니다.
@@ -381,6 +432,13 @@ function handleConfirm() {
   gap: 8px;
   padding: 16px 0 8px;
   background: var(--color-app-bg, #111111);
+}
+
+.consult-reservation-info-view__error {
+  box-sizing: border-box;
+  width: 100%;
+  font-size: 13px;
+  text-align: center;
 }
 
 .consult-reservation-info-view__confirm-notice {

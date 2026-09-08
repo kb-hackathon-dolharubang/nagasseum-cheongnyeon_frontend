@@ -17,3 +17,15 @@ export function getCategorySubjectLabel(category) {
   const label = CATEGORY_LABELS[category]
   return label ? `${label} 상담` : '상담'
 }
+
+// 예약 생성 API(POST /api/v1/consultations)가 쓰는 category 값은 프론트 내부 코드와
+// 이름이 다르다(GOAL_SETTING -> GOAL, ASSET_MANAGEMENT -> ASSET, 나머지는 동일). 화면
+// 로직은 항상 위 CATEGORY_OPTIONS의 value를 그대로 쓰고, 이 매핑은 그 API 요청을 만들
+// 때만(consultApi 호출 직전) 사용한다.
+export const CATEGORY_API_VALUES = {
+  GOAL_SETTING: 'GOAL',
+  SAVING: 'SAVING',
+  HOUSING: 'HOUSING',
+  LOAN: 'LOAN',
+  ASSET_MANAGEMENT: 'ASSET',
+}
