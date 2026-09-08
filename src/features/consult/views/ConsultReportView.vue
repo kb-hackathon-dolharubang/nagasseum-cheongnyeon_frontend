@@ -5,7 +5,7 @@ import { useRouter } from 'vue-router'
 import AppHeader from '@/shared/components/molecules/AppHeader.vue'
 import BaseCard from '@/shared/components/atoms/base/card/BaseCard.vue'
 import BaseButton from '@/shared/components/atoms/base/button/BaseButton.vue'
-import BaseClimbingLoader from '@/shared/components/atoms/feedback/ClimbingLoader/BaseClimbingLoader.vue'
+import BaseClimbingLoader from '@/shared/components/atoms/feedback/BaseClimbingLoader.vue'
 import BaseChevronIcon from '@/shared/components/atoms/base/icon/BaseChevronIcon.vue'
 import ConsultationInfoCard from '@/features/consult/components/ConsultationInfoCard.vue'
 import {

@@ -5,7 +5,7 @@ import { useRouter } from 'vue-router'
 import AppHeader from '@/shared/components/molecules/AppHeader.vue'
 import BaseButton from '@/shared/components/atoms/base/button/BaseButton.vue'
 import BaseBadge from '@/shared/components/atoms/base/badge/BaseBadge.vue'
-import BaseModal from '@/shared/components/atoms/feedback/Modal/BaseModal.vue'
+import BaseModal from '@/shared/components/atoms/feedback/BaseModal.vue'
 import ChatMessage from '@/features/consult/components/ChatMessage.vue'
 import { formatMonthDayWeekdayKo } from '@/shared/utils/formatter'
 import {

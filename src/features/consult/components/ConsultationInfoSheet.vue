@@ -4,9 +4,9 @@ import { computed, reactive, watch } from 'vue'
 import BaseBottomSheet from '@/shared/components/atoms/feedback/Sheet/BaseBottomSheet.vue'
 import BaseButton from '@/shared/components/atoms/base/button/BaseButton.vue'
 import BaseInputField from '@/shared/components/molecules/BaseInputField.vue'
-import BaseYearMonthSelect from '@/shared/components/atoms/form/YearMonthSelect/BaseYearMonthSelect.vue'
+import BaseYearMonthSelect from '@/shared/components/atoms/form/BaseYearMonthSelect.vue'
 import BaseFieldBadge from '@/shared/components/atoms/base/badge/BaseFieldBadge.vue'
-import BaseChipGroup from '@/shared/components/atoms/form/ChipGroup/BaseChipGroup.vue'
+import BaseChipGroup from '@/shared/components/atoms/form/BaseChipGroup.vue'
 import HousingPreferenceSelect from '@/features/consult/components/HousingPreferenceSelect.vue'
 
 const props = defineProps({

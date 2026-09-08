@@ -6,7 +6,7 @@ import AppHeader from '@/shared/components/molecules/AppHeader.vue'
 import BaseCard from '@/shared/components/atoms/base/card/BaseCard.vue'
 import BaseButton from '@/shared/components/atoms/base/button/BaseButton.vue'
 import BaseBadge from '@/shared/components/atoms/base/badge/BaseBadge.vue'
-import BaseChipGroup from '@/shared/components/atoms/form/ChipGroup/BaseChipGroup.vue'
+import BaseChipGroup from '@/shared/components/atoms/form/BaseChipGroup.vue'
 import CounselorCard from '@/features/consult/components/CounselorCard.vue'
 import {
   recentDiagnosisGoal,

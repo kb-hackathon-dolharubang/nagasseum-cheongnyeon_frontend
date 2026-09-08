@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 
-import BaseChipGroup from '@/shared/components/atoms/form/ChipGroup/BaseChipGroup.vue'
+import BaseChipGroup from '@/shared/components/atoms/form/BaseChipGroup.vue'
 import { SIDO_LIST, GUGUN_BY_SIDO, DONG_BY_GUGUN } from '@/shared/constants/regions'
 
 // 주거 형태/거래 유형은 goal 기능의 HousingGoalDiagnosisForm이 이미 쓰는 enum과 라벨을
