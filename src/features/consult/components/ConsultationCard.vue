@@ -6,6 +6,7 @@ import BaseButton from '@/shared/components/atoms/base/button/BaseButton.vue'
 import BaseBadge from '@/shared/components/atoms/base/badge/BaseBadge.vue'
 import { formatMonthDayWeekdayKo } from '@/shared/utils/formatter'
 import { getCategorySubjectLabel } from '@/features/consult/constants/categories'
+import { CONSULTATION_STATUS_META } from '@/features/consult/constants/status'
 
 const props = defineProps({
   reservationId: { type: Number, required: true },
@@ -18,15 +19,9 @@ const props = defineProps({
 
 const emit = defineEmits(['enter-chat', 'view-report'])
 
-// RESERVED/IN_PROGRESS/COMPLETED 3개만 쓴다. point 배지는 다른 화면(BaseBadge)에서도
-// 이미 강조색으로 쓰는 색이라 '상담 중'에 그대로 재사용해 다른 카드보다 눈에 띄게 한다.
-const STATUS_META = {
-  RESERVED: { label: '예약 완료', badgeVariant: 'mint' },
-  IN_PROGRESS: { label: '상담 중', badgeVariant: 'point' },
-  COMPLETED: { label: '상담 완료', badgeVariant: 'neutral' },
-}
-
-const statusMeta = computed(() => STATUS_META[props.status] ?? STATUS_META.RESERVED)
+const statusMeta = computed(
+  () => CONSULTATION_STATUS_META[props.status] ?? CONSULTATION_STATUS_META.RESERVED,
+)
 const subjectLabel = computed(() => getCategorySubjectLabel(props.category))
 const scheduleLabel = computed(
   () => `${formatMonthDayWeekdayKo(props.reservationDate)} · ${props.reservationTime}`,

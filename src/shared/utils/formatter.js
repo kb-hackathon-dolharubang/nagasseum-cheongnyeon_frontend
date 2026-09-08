@@ -60,6 +60,13 @@ export function formatDateTimeDot(date) {
   return `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
+// "2026-09-09T14:00:00" -> "14:00" (채팅 메시지처럼 시:분만 보조 정보로 보여줄 때 사용)
+export function formatTimeKo(date) {
+  const d = new Date(date)
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
 // "9.3억" 형태로 축약 표기 (억 단위 미만은 소수 첫째 자리까지, 불필요한 0은 생략)
 export function formatEok(amount) {
   const eok = Number((amount / 100000000).toFixed(1))

@@ -132,6 +132,67 @@ export const myConsultations = [
   },
 ]
 
+// 채팅 화면(/consult/chat/:reservationId) Mock 메시지. key는 myConsultations[].reservationId다.
+// 상담사 이름/이미지는 counselors에서 counselorId로 조회해서 쓰므로 여기에 다시 넣지 않는다.
+// 실제 백엔드가 생기면 GET /chat/{reservationId}/messages 응답으로 이 자리를 대체하면 된다.
+export const chatMessages = {
+  1: [
+    {
+      messageId: 1,
+      senderType: 'COUNSELOR',
+      content: '안녕하세요. 예약해주신 주거 상담을 맡은 김민지 상담사입니다. 편하게 말씀해주세요.',
+      createdAt: '2026-09-09T14:00:00',
+    },
+  ],
+  2: [
+    {
+      messageId: 1,
+      senderType: 'COUNSELOR',
+      content: '안녕하세요. 오늘 상담을 맡은 이서현 상담사입니다.',
+      createdAt: '2026-09-06T16:00:00',
+    },
+    {
+      messageId: 2,
+      senderType: 'USER',
+      content: '안녕하세요. 저축 계획을 조금 더 구체적으로 세우고 싶어서 상담 신청했습니다.',
+      createdAt: '2026-09-06T16:01:00',
+    },
+    {
+      messageId: 3,
+      senderType: 'COUNSELOR',
+      content: '네, 먼저 현재 월 저축액과 목표 시점부터 같이 확인해볼게요.',
+      createdAt: '2026-09-06T16:02:00',
+    },
+  ],
+  3: [
+    {
+      messageId: 1,
+      senderType: 'COUNSELOR',
+      content: '안녕하세요. 자산 관리 상담을 맡은 박지훈 상담사입니다.',
+      createdAt: '2026-09-05T13:00:00',
+    },
+    {
+      messageId: 2,
+      senderType: 'USER',
+      content: '네, 현재 자산 배분을 어떻게 조정하면 좋을지 궁금합니다.',
+      createdAt: '2026-09-05T13:02:00',
+    },
+    {
+      messageId: 3,
+      senderType: 'COUNSELOR',
+      content: '오늘 말씀드린 내용 정리해서 리포트로 보내드릴게요. 상담은 여기서 마무리하겠습니다.',
+      createdAt: '2026-09-05T13:05:00',
+    },
+  ],
+}
+
+// 상담사(COUNSELOR) 역할로 채팅 화면을 확인할 때 상단에 표시할 사용자 쪽 Mock 프로필.
+// 아직 회원 프로필 조회 API가 없어 데모 확인용으로만 최소 형태로 둔다.
+export const chatUserProfile = {
+  name: '김OO',
+  image: '',
+}
+
 // 상담사별 예약 가능 일정. 실제 스케줄 API가 생기면 counselorId로 조회하도록 바꾸면 된다.
 // key는 counselors[].id. 날짜가 이 목록에 없으면(과거/당일 포함) 예약 화면 캘린더에서
 // 선택할 수 없는 날짜로 취급한다.
