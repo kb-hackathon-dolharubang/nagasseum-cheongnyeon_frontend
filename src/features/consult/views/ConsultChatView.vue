@@ -16,10 +16,12 @@ import {
 } from '@/features/consult/data/counselors'
 import { CONSULTATION_STATUS_META } from '@/features/consult/constants/status'
 import { CURRENT_ROLE, CURRENT_COUNSELOR_ID } from '@/features/consult/constants/role'
+import { useAuthStore } from '@/features/auth'
 import {
   getConsultationMessages,
   sendConsultationMessage,
   getCounselorConsultations,
+  getUserConsultations,
 } from '@/features/consult/api/consultApi'
 
 const props = defineProps({
@@ -27,6 +29,7 @@ const props = defineProps({
 })
 
 const router = useRouter()
+const authStore = useAuthStore()
 
 // route param을 한 번만 검증해서 이후 API 호출들이 전부 이 값을 쓴다 - 잘못된
 // reservationId(숫자가 아니거나 0 이하)면 null로 두고 GET/POST/polling을 아예 시작하지
@@ -44,49 +47,63 @@ const reservationIdNumber = computed(() => {
 const currentRole = window.history.state?.viewerRole === 'COUNSELOR' ? 'COUNSELOR' : CURRENT_ROLE
 
 // USER는 자신의 예약 목록(myConsultations)에서, COUNSELOR는 상담사 홈 목록
-// (counselorConsultations)에서 같은 reservationId를 찾는다 - 두 목록에 겹치는
-// reservationId(예: 2)는 같은 상담을 가리키므로 채팅 내용도 자연히 같이 이어진다.
-// (이 조회는 상대방 이름/상담 상태 표시용으로만 쓰이는 기존 로직이라 이번 작업(메시지
-// API 연동) 범위 밖이라 그대로 둔다.)
+// (counselorConsultations)에서 같은 reservationId를 찾는다 - mock 범위 밖(실제
+// 백엔드로 생성된) reservationId면 못 찾아 null이 되므로, 아래 realReservation(실제
+// API 조회 결과)을 항상 우선으로 두고 이건 그 값이 아직 없을 때의 fallback으로만 쓴다.
 const reservation = computed(() => {
   if (!reservationIdNumber.value) return null
   const source = currentRole === 'COUNSELOR' ? counselorConsultations : myConsultations
   return source.find((item) => item.reservationId === reservationIdNumber.value) ?? null
 })
+
+// 이 예약의 실제 백엔드 데이터. 단건 조회 API가 없어 목록 API(역할별로 다른 엔드포인트)를
+// 불러 reservationId로 찾는다 - counselorId/status/reservationDate·Time 등 mock에
+// 기대면 안 되는 값들의 유일한 진짜 출처다.
+const realReservation = ref(null)
+
+onMounted(async () => {
+  if (!reservationIdNumber.value) return
+  try {
+    if (currentRole === 'COUNSELOR') {
+      const items = await getCounselorConsultations(CURRENT_COUNSELOR_ID)
+      realReservation.value =
+        (items ?? []).find((item) => item.reservationId === reservationIdNumber.value) ?? null
+    } else {
+      const memberId = authStore.currentMemberId
+      if (!memberId) return
+      const items = await getUserConsultations(memberId)
+      realReservation.value =
+        (items ?? []).find((item) => item.reservationId === reservationIdNumber.value) ?? null
+    }
+  } catch {
+    realReservation.value = null
+  }
+
+  // 채팅방에 들어온 순간은 진행 중으로 본다는 기존 정책은 유지하되(RESERVED로
+  // 들어와도 IN_PROGRESS로 취급), 이미 COMPLETED인지만은 실제 상태를 따른다.
+  if (realReservation.value?.status === 'COMPLETED') {
+    status.value = 'COMPLETED'
+  }
+})
+
 // COUNSELOR로 볼 때는 상담사 자신이 누구인지 이미 알고 있어(CURRENT_COUNSELOR_ID) 이걸로
-// 바로 찾는다 - reservation(mock counselorConsultations) 조회에 기대면, 실제 백엔드로
-// 생성돼 mock 범위에 없는 reservationId에서 상담사 이름이 안 나온다(예: 인사말에 표시).
-// USER로 볼 때는 상대 상담사를 알아내야 하므로 기존처럼 reservation.counselorId로 찾는다.
+// 바로 찾는다. USER로 볼 때는 상대 상담사의 id를 알아내야 하므로 realReservation(실제
+// API) -> reservation(mock) 순으로 counselorId를 구해 찾는다.
 const counselor = computed(() => {
   if (currentRole === 'COUNSELOR') {
     return counselors.find((item) => item.id === CURRENT_COUNSELOR_ID) ?? null
   }
-  return reservation.value
-    ? (counselors.find((item) => item.id === reservation.value.counselorId) ?? null)
-    : null
+  const counselorId = realReservation.value?.counselorId ?? reservation.value?.counselorId
+  return counselorId ? (counselors.find((item) => item.id === counselorId) ?? null) : null
 })
 
 // 내 상담 목록에서 어떤 상태로 들어왔든(RESERVED에서 '상담 입장'을 눌러도) 채팅방에
 // 들어온 순간은 진행 중으로 본다. 이미 COMPLETED인 상담(리포트에서 되돌아온 경우 등)만
-// 읽기 전용으로 유지한다. 실제 상태 변경 API가 없어 화면 로컬 상태로만 관리한다.
+// 읽기 전용으로 유지한다. 초기값은 mock 기준으로 두고, onMounted에서 실제 상태로
+// 갱신한다(비동기라 setup 시점엔 realReservation이 아직 없다). 상담 종료 버튼을 누르면
+// 이 값을 직접 'COMPLETED'로 바꾸므로 ref로 유지한다(computed 불가).
 const status = ref(reservation.value?.status === 'COMPLETED' ? 'COMPLETED' : 'IN_PROGRESS')
 const statusMeta = computed(() => CONSULTATION_STATUS_META[status.value])
-
-// COUNSELOR로 볼 때 상대(신청자) 이름은 mock counselorConsultations 대신 실제 API에서
-// 가져온다 - CounselorHomeView와 같은 API를 재사용해, 이 화면의 reservationId와 일치하는
-// 항목의 userName만 뽑아 쓴다(백엔드에 예약 1건 단건 조회 API가 없어 목록에서 찾는다).
-const realCounselorReservation = ref(null)
-
-onMounted(async () => {
-  if (currentRole !== 'COUNSELOR' || !reservationIdNumber.value) return
-  try {
-    const items = await getCounselorConsultations(CURRENT_COUNSELOR_ID)
-    realCounselorReservation.value =
-      (items ?? []).find((item) => item.reservationId === reservationIdNumber.value) ?? null
-  } catch {
-    realCounselorReservation.value = null
-  }
-})
 
 // 상단 헤더에 보여줄 상대방. currentRole이 USER면 상담사가, COUNSELOR면 이 상담을
 // 예약한 사용자가 상대다 - 이 값만 바뀌면 같은 ChatView를 두 역할이 그대로 재사용할
@@ -95,9 +112,7 @@ onMounted(async () => {
 const opponent = computed(() => {
   if (currentRole === 'COUNSELOR') {
     const userName =
-      realCounselorReservation.value?.userName ??
-      reservation.value?.userName ??
-      chatUserProfile.name
+      realReservation.value?.userName ?? reservation.value?.userName ?? chatUserProfile.name
     return { image: chatUserProfile.image, displayName: userName }
   }
   const name = counselor.value?.name ?? '상담사'
@@ -146,9 +161,9 @@ function toDateKey(createdAt) {
 // 가짜 첫 메시지다 - DB에 저장하지 않으므로 목록/폴링에도 안 잡히고, 첫 메시지 전송 시
 // RESERVED -> IN_PROGRESS로 바뀌는 백엔드 규칙에도 영향을 주지 않는다. 시각은 지금
 // 시각이 아니라 "원래 상담 시작하기로 한 시간"(예약 날짜/시간)에 맞춘다 - 실제 API로
-// 조회된 값(realCounselorReservation)이 있으면 그걸, 없으면 mock reservation을 쓴다.
+// 조회된 값(realReservation)이 있으면 그걸, 없으면 mock reservation을 쓴다.
 const introMessage = computed(() => {
-  const info = realCounselorReservation.value ?? reservation.value
+  const info = realReservation.value ?? reservation.value
   const date = info?.reservationDate ?? new Date().toISOString().slice(0, 10)
   const time = info?.reservationTime ?? '00:00:00'
   return {
