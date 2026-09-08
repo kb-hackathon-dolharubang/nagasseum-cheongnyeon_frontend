@@ -258,10 +258,6 @@ async function handleDelete() {
   --c-hero-muted: #8a8f63;
   --c-hero-btn-bg: #12281c;
   --c-hero-btn-ink: #f7ffd1;
-  /*
-    AppHeader가 쓰는 legacy 변수. 이 화면에서만 테마 토큰으로 바꿔 끼운다.
-  */
-  --text-h: var(--color-text-primary);
 
   /*
     앱 배경이 아직 테마를 따라가지 않아 이 화면만 직접 칠한다. MobileLayout의 여백을
@@ -370,25 +366,6 @@ async function handleDelete() {
   color: var(--c-danger);
   font-size: 11px;
   line-height: 1.5;
-}
-
-/*
-  아래 규칙들은 teleport된 팝업 안에서 쓰인다. slot 안의 노드는 이 컴포넌트가 만든 것이라
-  scoped 스타일이 그대로 붙지만, 이 화면 루트(.asset-detail-view)의 --c-* 변수는
-  body로 옮겨간 팝업까지 상속되지 않으므로 공용 테마 토큰만 쓴다.
-*/
-
-/*
-  BaseInputField·BaseFieldBadge·BaseInput은 테마를 안 타는 legacy 변수
-  (--text-h / --text / --border)를 쓴다. 정의가 없으면 폴백이 흰색(#ffffff)이라
-  라이트 모드의 밝은 팝업 배경에서 라벨이 안 보인다. 공용 컴포넌트를 고치는 대신
-  이 팝업 안에서만 시맨틱 토큰으로 바꿔 끼운다(GoalConditionStepsView와 같은 방식).
-*/
-.asset-detail-view__modal {
-  --text-h: var(--color-text-primary);
-  --text: var(--color-text-secondary);
-  --border: var(--color-border);
-  --card-bg: var(--color-surface);
 }
 
 /*

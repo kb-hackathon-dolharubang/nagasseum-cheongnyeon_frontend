@@ -275,18 +275,7 @@ function handleSkip() {
 </template>
 
 <style scoped>
-/*
-  공용 form 컴포넌트(BaseDualRangeSlider·BaseYearMonthSelect)가 테마를 안 타는 legacy 변수
-  --text-h / --text / --border / --card-bg를 쓴다. main.css의 [data-theme] 블록에 없는 값이라
-  라이트 모드에서 흰 글씨가 그대로 남는다. AuthLayout이 쓰는 방식과 같이, 공용 컴포넌트를
-  고치지 않고 이 화면 안에서만 시맨틱 토큰으로 덮어씌운다.
-*/
 .goal-steps-view {
-  --text-h: var(--color-text-primary);
-  --text: var(--color-text-secondary);
-  --border: var(--color-border);
-  --card-bg: var(--color-surface);
-
   display: flex;
   flex-direction: column;
   min-height: calc(100vh - 32px);

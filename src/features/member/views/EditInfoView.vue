@@ -211,17 +211,6 @@ async function handleSave() {
 <style scoped>
 .edit-info-view {
   /*
-    BaseInputField와 BaseOptionCardGroup이 아직 legacy --text-h(#ffffff 고정)를 쓴다.
-    라이트에서 "닉네임" "월 소득" 라벨과 안 고른 분위 카드 글씨가 흰 배경에 묻힌다.
-    공용 컴포넌트를 고치지 않고 이 화면에서만 변수를 테마 토큰으로 바꿔 끼운다.
-  */
-  --text-h: var(--color-text-primary);
-  /*
-    legacy --border도 #262626 고정이라 라이트에서 입력창·분위 카드만 검은 테두리가 된다.
-    다른 카드와 같은 연한 선으로 맞춘다.
-  */
-  --border: var(--color-border);
-  /*
     "필수" "선택" 뱃지도 색이 박혀 있다(#3a1f1f / #1e211f). 라이트에서 검은 알약이 된다.
     기본값은 다크로 두고 라이트만 덮어쓴다.
   */
