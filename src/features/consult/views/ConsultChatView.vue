@@ -152,10 +152,12 @@ const introMessage = computed(() => ({
   createdAt: `${reservation.value?.reservationDate ?? new Date().toISOString().slice(0, 10)}T00:00:00`,
 }))
 
+// 인사말은 실제 메시지가 없을 때만이 아니라, 실제 메시지가 생긴 뒤에도 대화의 첫
+// 마디로 계속 남아있어야 한다(안 그러면 메시지를 보내는 순간 인사말이 사라져 마치
+// 허공에 대고 말한 것처럼 보인다) - 그래서 조건부 교체가 아니라 항상 맨 앞에 붙인다.
 const displayMessages = computed(() => {
-  if (messages.value.length > 0) return messages.value
   if (isLoadingMessages.value || loadMessagesError.value) return []
-  return [introMessage.value]
+  return [introMessage.value, ...messages.value]
 })
 
 // 날짜가 바뀔 때만 구분선을 새로 만든다. Mock 메시지가 모두 같은 날짜면 구분선은
