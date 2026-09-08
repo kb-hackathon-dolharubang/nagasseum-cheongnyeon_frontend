@@ -1,7 +1,7 @@
 import { reactive, readonly, toRefs } from 'vue'
 
 const THEME_STORAGE_KEY = 'theme'
-const DEFAULT_THEME = 'dark'
+const DEFAULT_THEME = 'light'
 
 const state = reactive({
   theme: DEFAULT_THEME,
@@ -30,9 +30,9 @@ function resolveInitialTheme() {
 
   if (
     typeof window !== 'undefined' &&
-    window.matchMedia?.('(prefers-color-scheme: light)').matches
+    window.matchMedia?.('(prefers-color-scheme: dark)').matches
   ) {
-    return 'light'
+    return 'dark'
   }
 
   return DEFAULT_THEME
