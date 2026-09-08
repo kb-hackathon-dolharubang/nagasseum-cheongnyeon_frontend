@@ -13,6 +13,7 @@ import { goalRoutes } from '@/router/routes/goal.routes'
 import { memberRoutes } from '@/router/routes/member.routes'
 import { consultRoutes } from '@/router/routes/consult.routes'
 import { counselorRoutes } from '@/router/routes/counselor.routes'
+import { policyRoutes } from '@/router/routes/policy.routes'
 
 const AUTH_REQUIRED_ROUTE_NAMES = [
   'deposit-info',
@@ -23,6 +24,7 @@ const AUTH_REQUIRED_ROUTE_NAMES = [
   'asset-detail',
   'home',
   'compare',
+  'policy',
   'my',
   'edit-info',
   'consult',
@@ -44,6 +46,7 @@ const routes = [
       ...homeRoutes,
       ...goalRoutes,
       ...compareRoutes,
+      ...policyRoutes,
       ...memberRoutes,
       ...assetDetailRoutes,
       ...assetManagementRoutes,
