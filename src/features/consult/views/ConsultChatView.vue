@@ -15,7 +15,7 @@ import {
   chatUserProfile,
 } from '@/features/consult/data/counselors'
 import { CONSULTATION_STATUS_META } from '@/features/consult/constants/status'
-import { CURRENT_ROLE } from '@/features/consult/constants/role'
+import { CURRENT_ROLE, CURRENT_COUNSELOR_ID } from '@/features/consult/constants/role'
 import { getConsultationMessages, sendConsultationMessage } from '@/features/consult/api/consultApi'
 
 const props = defineProps({
@@ -49,11 +49,18 @@ const reservation = computed(() => {
   const source = currentRole === 'COUNSELOR' ? counselorConsultations : myConsultations
   return source.find((item) => item.reservationId === reservationIdNumber.value) ?? null
 })
-const counselor = computed(() =>
-  reservation.value
+// COUNSELOR로 볼 때는 상담사 자신이 누구인지 이미 알고 있어(CURRENT_COUNSELOR_ID) 이걸로
+// 바로 찾는다 - reservation(mock counselorConsultations) 조회에 기대면, 실제 백엔드로
+// 생성돼 mock 범위에 없는 reservationId에서 상담사 이름이 안 나온다(예: 인사말에 표시).
+// USER로 볼 때는 상대 상담사를 알아내야 하므로 기존처럼 reservation.counselorId로 찾는다.
+const counselor = computed(() => {
+  if (currentRole === 'COUNSELOR') {
+    return counselors.find((item) => item.id === CURRENT_COUNSELOR_ID) ?? null
+  }
+  return reservation.value
     ? (counselors.find((item) => item.id === reservation.value.counselorId) ?? null)
-    : null,
-)
+    : null
+})
 
 // 내 상담 목록에서 어떤 상태로 들어왔든(RESERVED에서 '상담 입장'을 눌러도) 채팅방에
 // 들어온 순간은 진행 중으로 본다. 이미 COMPLETED인 상담(리포트에서 되돌아온 경우 등)만
