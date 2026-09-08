@@ -1,9 +1,6 @@
 import httpClient from '@/shared/api/httpClient'
 
-// 값을 지정하지 않은 조건(null)은 쿼리 문자열에서 아예 뺀다.
-// axios도 null/undefined 파라미터는 직렬화하지 않지만, "조건 없음 = 파라미터 없음"이라는 계약을
-// 호출부가 아니라 여기서 명시적으로 보장한다. 빈 문자열도 조건 없음으로 취급한다
-// (백엔드 @NotBlank/@Pattern 검증에 빈 값이 걸려 400이 나는 것을 막는다).
+// null/undefined/빈 문자열은 쿼리에서 제외한다 (백엔드 @NotBlank 검증 400 방지)
 function toRecommendationParams(condition) {
   return Object.fromEntries(
     Object.entries(condition).filter(
@@ -12,17 +9,8 @@ function toRecommendationParams(condition) {
   )
 }
 
-// 희망 조건을 받아 추천 목표 대안 목록을 돌려준다 (PREFERENCE / REALISTIC / VALUE / HOLD_OUT).
-//
-// 명세서의 GET + Query Parameter를 따른다.
-// ⚠️ 백엔드 구현(GoalRecommendationController#recommend)은 아직 POST + @RequestBody라
-// 그대로 붙이면 405가 난다. 백엔드도 @GetMapping + @ModelAttribute로 바꿔야 동작한다.
-// (명세서에 "미확정 — 프론트와 합의 필요"로 남아 있던 항목을 명세서 기준으로 정리한 것)
-//
-// 쿼리 파라미터 이름은 백엔드 GoalRecommendationRequest 필드와 1:1로 같아 변환 없이 그대로 보낸다.
-// regionCode(시도 2자리 또는 시군구 5자리)만 필수이고 나머지는 전부 선택값이며,
-// 지정하지 않은 조건은 아예 쿼리에서 빼면 각 추천 알고리즘이 알아서 채운다.
-// memberId는 인증 토큰(@LoginMember)에서 추출하므로 별도 전달 불필요
+// 조건 입력 단계에서 추천 목표 대안 목록을 조회한다 (PREFERENCE / REALISTIC / VALUE / HOLD_OUT)
+// regionCode만 필수이고, 지정하지 않은 조건은 쿼리에서 빠져 각 알고리즘이 알아서 채운다
 export async function fetchGoalRecommendations(condition) {
   const { data } = await httpClient.get('/api/v1/goals/recommendations', {
     params: toRecommendationParams(condition),
@@ -30,10 +18,7 @@ export async function fetchGoalRecommendations(condition) {
   return data.data
 }
 
-// 진단 결과 화면(추천 계획 비교 리스트)용 추천 목록 조회.
-// 조건 입력 단계(fetchGoalRecommendations)와 달리 조건 쿼리 없이 memberId(인증 토큰)만으로
-// 이미 계산되어 있는 추천 결과를 그대로 돌려받는다 — 새로고침이나 직접 진입에도 store에만
-// 의존하지 않고 항상 서버에서 다시 받아올 수 있게 하기 위함.
+// 진단 결과 화면용 — 조건 없이 이미 계산된 추천 결과를 그대로 조회한다
 export async function fetchGoalRecommendation() {
   const { data } = await httpClient.get('/api/v1/goals/recommendation')
   return data.data
@@ -45,16 +30,13 @@ export async function fetchGoalDetail(goalId) {
   return data.data
 }
 
-// 기존 목표 내용 조회. 상세 조회(detail)와 달리 수정 폼 재현에 필요한 원본 입력값
-// (특히 지역 "코드" regionCode)을 평평한 GoalResponse로 내려주므로, 목표 수정 요청 본문을
-// 만들 때 사용한다. 응답 필드 구성이 수정 요청 본문과 같아 그대로 되돌려 보낼 수 있다.
+// 목표 수정 폼 초기값용 — detail과 달리 regionCode 등 원본 입력값을 그대로 내려준다
 export async function fetchGoal(goalId) {
   const { data } = await httpClient.get(`/api/v1/goals/${goalId}`)
   return data.data
 }
 
-// 월 저축액을 특정 금액으로 바꿨다고 가정했을 때의 예상 달성 시점 (저장하지 않고 계산만 한다).
-// 응답은 목표 달성 상세 조회의 forecasts[] 항목과 동일한 형태 { basis, monthlySaving, expectedDate, monthsDiff }
+// 월 저축액을 바꿨을 때의 예상 달성 시점만 계산한다 (저장하지 않음)
 export async function fetchMonthlySavingSimulation(goalId, monthlySaving) {
   const { data } = await httpClient.get(`/api/v1/goals/${goalId}/simulations/monthly-saving`, {
     params: { monthlySaving },
@@ -62,40 +44,35 @@ export async function fetchMonthlySavingSimulation(goalId, monthlySaving) {
   return data.data
 }
 
-// 목표 수정. 부분 수정(PATCH)이 아니라 전체 교체(PUT)라 목표/주거 조건 전체를 함께 보내야 한다.
+// 부분 수정이 아닌 전체 교체(PUT)라 목표/주거 조건 전체를 함께 보내야 한다
 export async function putGoal(goalId, payload) {
   const { data } = await httpClient.put(`/api/v1/goals/${goalId}`, payload)
   return data.data
 }
 
-// 로그인 사용자의 활성 목표(status=ACTIVE) 조회. 활성 목표가 없어도 정상 상태(200)로
-// data:null을 내려주도록 명세되어 있다 — 하단 탭바가 목표 탭 진입 시 상세/빈 화면을
-// 가르는 데 사용한다.
+// 활성 목표가 없어도 data:null로 정상 응답(200)한다
 export async function fetchActiveGoal() {
   const { data } = await httpClient.get('/api/v1/goals/active')
   return data.data
 }
 
-// 목표 삭제. memberId는 인증 토큰(@LoginMember)에서 추출하므로 별도 전달 불필요
 export async function deleteGoal(goalId) {
   const { data } = await httpClient.delete(`/api/v1/goals/${goalId}`)
   return data.data
 }
 
-// 추천 상세 화면에서 "이 계획으로 목표 설정하기" 선택 시 목표를 저장한다.
-// memberId는 인증 토큰(@LoginMember)에서 추출하므로 별도 전달 불필요
 export async function postGoal(payload) {
   const { data } = await httpClient.post('/api/v1/goals', payload)
   return data.data
 }
 
-// 홈 화면 매물 시세 변화 카드용 데이터. memberId는 인증 토큰(@LoginMember)에서 추출하므로 별도 전달 불필요
+// 홈 화면 매물 시세 변화 카드용 데이터
 export async function fetchGoalMarketTrend() {
   const { data } = await httpClient.get('/api/v1/goals/market-trend')
   return data.data
 }
 
-// 홈 화면 목표 달성 요약 카드용 데이터. memberId는 인증 토큰에서 추출하므로 별도 전달 불필요
+// 홈 화면 목표 달성 요약 카드용 데이터
 export async function fetchGoalSummary() {
   const { data } = await httpClient.get('/api/v1/goals/summary')
   return data.data
