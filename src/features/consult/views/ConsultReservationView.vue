@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 
 import AppHeader from '@/shared/components/molecules/AppHeader.vue'
 import BaseButton from '@/shared/components/atoms/base/button/BaseButton.vue'
+import ReservationStepIndicator from '@/features/consult/components/ReservationStepIndicator.vue'
 import { formatYearMonthKo, formatMonthDayWeekdayKo } from '@/shared/utils/formatter'
 import { counselors, availableReservationSlots } from '@/features/consult/data/counselors'
 
@@ -17,9 +18,10 @@ const counselor = computed(
   () => counselors.find((item) => item.id === Number(props.counselorId)) ?? null,
 )
 
-// 상담 홈에서 분야 칩을 고른 채로 들어왔다면 그 값을 이어받는다(상담 홈 구조는 건드리지
-// 않고, 진입 시점의 router state만 읽는다). '전체'처럼 특정 분야가 아니면 null이다.
+// 상담 홈에서 넘어온 분야/상담 유형을 이어받는다(상담 홈 구조는 건드리지 않고, 진입
+// 시점의 router state만 읽는다). 다음 단계(상담 정보)까지 그대로 전달하기만 한다.
 const incomingCategory = window.history.state?.category ?? null
+const incomingConsultationType = window.history.state?.consultationType ?? 'GENERAL'
 
 const slotsByDate = computed(() => availableReservationSlots[Number(props.counselorId)] ?? [])
 const slotDateSet = computed(() => new Set(slotsByDate.value.map((entry) => entry.date)))
@@ -104,6 +106,7 @@ function goNext() {
       date: selectedDate.value,
       time: selectedTime.value,
       category: incomingCategory,
+      consultationType: incomingConsultationType,
     },
   })
 }
@@ -132,22 +135,7 @@ function goNext() {
         </div>
       </div>
 
-      <div class="consult-reservation-view__steps">
-        <div class="consult-reservation-view__step consult-reservation-view__step--active">
-          <span class="consult-reservation-view__step-number">1</span>
-          <span class="consult-reservation-view__step-label">일정 선택</span>
-        </div>
-        <span class="consult-reservation-view__step-divider" />
-        <div class="consult-reservation-view__step">
-          <span class="consult-reservation-view__step-number">2</span>
-          <span class="consult-reservation-view__step-label">상담 정보</span>
-        </div>
-        <span class="consult-reservation-view__step-divider" />
-        <div class="consult-reservation-view__step">
-          <span class="consult-reservation-view__step-number">3</span>
-          <span class="consult-reservation-view__step-label">예약 완료</span>
-        </div>
-      </div>
+      <ReservationStepIndicator :current="1" />
 
       <section class="consult-reservation-view__section">
         <h2 class="consult-reservation-view__section-title">날짜를 선택해주세요</h2>
@@ -285,56 +273,6 @@ function goNext() {
   margin: 2px 0 0;
   font-size: 12.5px;
   color: var(--color-text-secondary, #9aa09a);
-}
-
-/* ── 진행 단계 ─────────────────────────────────────────────── */
-
-.consult-reservation-view__steps {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.consult-reservation-view__step {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex: none;
-}
-
-.consult-reservation-view__step-number {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 10px;
-  background: var(--color-progress-inactive, #262626);
-  color: var(--color-text-tertiary, #6f766d);
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.consult-reservation-view__step-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--color-text-tertiary, #6f766d);
-  white-space: nowrap;
-}
-
-.consult-reservation-view__step--active .consult-reservation-view__step-number {
-  background: var(--base-button-primary-bg, #e3ffe8);
-  color: var(--base-button-primary-text, #16281c);
-}
-
-.consult-reservation-view__step--active .consult-reservation-view__step-label {
-  color: var(--color-text-primary, #ffffff);
-}
-
-.consult-reservation-view__step-divider {
-  flex: 1;
-  height: 1px;
-  background: var(--color-border, #262626);
 }
 
 /* ── 섹션 공통 ─────────────────────────────────────────────── */

@@ -46,6 +46,13 @@ export function formatMonthDayWeekdayKo(date) {
   }).format(new Date(date))
 }
 
+// "2031-08" 또는 "2031.08" -> "2031년 8월". new Date()로 파싱하면 '.'구분 문자열은
+// 브라우저마다 Invalid Date가 될 수 있어(비표준 포맷), 문자열을 직접 나눠 처리한다.
+export function formatYearMonthFlexibleKo(value) {
+  const [year, month] = String(value).split(/[-.]/)
+  return `${year}년 ${Number(month)}월`
+}
+
 // "2026-08-02T21:40:00+09:00" -> "2026.08.02 21:40" (자산 갱신 시각처럼 날짜+시각을 같이 보여줄 때 사용)
 export function formatDateTimeDot(date) {
   const d = new Date(date)

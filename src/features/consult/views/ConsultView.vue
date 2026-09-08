@@ -39,9 +39,18 @@ const CATEGORY_OPTIONS = [
 // 상담사 목록 필터 조건으로 그대로 쓰인다.
 const selectedCategory = ref('ALL')
 
+// '상담사 보기'(최근 진단 목표 카드)로 들어왔는지. true면 예약 화면에서 목표 진단 연계
+// 상담(GOAL_DIAGNOSIS)으로, 아니면 분야 칩 기준 일반 상담(GENERAL)으로 이어간다.
+const cameFromGoalDiagnosis = ref(false)
+
 const selectedCategoryLabel = computed(
   () => CATEGORY_OPTIONS.find((option) => option.value === selectedCategory.value)?.label,
 )
+
+function handleCategorySelect(value) {
+  selectedCategory.value = value
+  cameFromGoalDiagnosis.value = false
+}
 
 // Mock 데이터의 categories는 분야 칩과 같은 한글 라벨을 쓰므로, 선택된 칩의 라벨로 바로
 // 걸러낸다. '전체'는 라벨 자체가 데이터에 없어 별도로 통과시킨다.
@@ -55,12 +64,20 @@ const filteredCounselors = computed(() => {
 function goToReservation(counselorId) {
   // '전체'는 특정 분야를 고른 것이 아니라 null로 넘긴다. 예약 화면들은 이 값을 그대로
   // 받아 상담 정보 단계까지 이어서 전달하기만 한다(router state라 URL에는 남지 않는다).
-  const category = selectedCategory.value === 'ALL' ? null : selectedCategoryLabel.value
-  router.push({ name: 'consult-reservation', params: { counselorId }, state: { category } })
+  const category = selectedCategory.value === 'ALL' ? null : selectedCategory.value
+  const consultationType = cameFromGoalDiagnosis.value ? 'GOAL_DIAGNOSIS' : 'GENERAL'
+  router.push({
+    name: 'consult-reservation',
+    params: { counselorId },
+    state: { category, consultationType },
+  })
 }
 
 function handleViewCounselors() {
-  // 상담사 목록 화면이 아직 없어 클릭 지점만 마련해둔다. 목록이 생기면 여기서 이동시킨다.
+  // 최근 진단 목표를 들고 온 흐름임을 표시해 예약 화면까지 이어간다. 분야 칩은 이
+  // 흐름과 무관하므로 '전체'로 되돌린다.
+  selectedCategory.value = 'ALL'
+  cameFromGoalDiagnosis.value = true
 }
 
 function handleViewMyConsultations() {
@@ -109,7 +126,12 @@ function handleViewMyConsultations() {
 
     <section class="consult-view__section">
       <h2 class="consult-view__section-title">어떤 상담이 필요하신가요?</h2>
-      <BaseChipGroup v-model="selectedCategory" :options="CATEGORY_OPTIONS" size="sm" />
+      <BaseChipGroup
+        :model-value="selectedCategory"
+        :options="CATEGORY_OPTIONS"
+        size="sm"
+        @update:model-value="handleCategorySelect"
+      />
     </section>
 
     <div class="consult-view__counselor-list">

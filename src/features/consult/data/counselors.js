@@ -38,13 +38,57 @@ export const counselors = [
   },
 ]
 
-// 최근 진단한 주거 목표 요약. 목표 상세 조회 API가 아직 없어 상담 홈에서 보여줄
-// 요약 정보만 Mock으로 둔다. API가 생기면 goalStore 등에서 가져오도록 바꾸면 된다.
+// 최근 진단한 주거 목표 요약. 목표 상세 조회 API가 아직 없어 상담 홈/상담 정보 화면에서
+// 보여줄 정보를 Mock으로 둔다. API가 생기면 goalStore 등에서 가져오도록 바꾸면 된다.
+// region/transactionType/targetDate는 상담 홈의 요약 카드가, originalCondition 이하는
+// 목표 진단 연계 상담 정보 화면(ConsultReservationInfoView)이 쓴다.
+// originalCondition/recommendedCondition은 HousingPreferenceSelect가 다루는 것과 같은
+// shape(province/district/neighborhood/housingType/transactionType/areaRange)을 쓴다 -
+// originalCondition은 상담 정보 Bottom Sheet에서 그대로 수정할 수 있어야 하기 때문이다.
 export const recentDiagnosisGoal = {
   id: 1,
   region: '서울 마포구',
   transactionType: '전세',
   targetDate: '2031.08',
+  originalCondition: {
+    province: { code: '11', name: '서울특별시' },
+    district: { code: '11440', name: '마포구' },
+    neighborhood: { code: '11440-SEOGYO', name: '서교동' },
+    housingType: 'OFFICETEL',
+    transactionType: 'JEONSE',
+    areaRange: { min: 10, max: 20, label: '10~20평' },
+  },
+  recommendedCondition: {
+    province: { code: '11', name: '서울특별시' },
+    district: { code: '11440', name: '마포구' },
+    neighborhood: { code: '11440-SEOGYO', name: '서교동' },
+    housingType: 'DETACHED',
+    transactionType: 'JEONSE',
+    areaRange: { min: 4, max: 9, label: '4~9평' },
+  },
+  recommendedMonthlySaving: 1100000,
+}
+
+// 일반 상담(GENERAL)에서 상담사가 참고할 사용자 정보. 어떤 분야(category)를 골랐는지와
+// 무관하게 항상 같은 4개 필수 항목(희망 주거 조건/현재 자산/월 저축 가능액/목표 시점)을
+// 보여준다 - 분야는 "상담 분야" 표시에만 쓰이고 이 정보 자체를 바꾸지 않는다.
+// 실제로는 goalStore/assetStore 등에 이미 있는 값이지만, consult 화면에서 다른 feature의
+// store를 직접 참조하지 않기 위해 같은 모양으로 Mock을 둔다. 값이 비어 있는 항목은
+// 상담 정보 화면(ConsultationInfoCard)에서 직접 입력할 수 있게 처리한다.
+export const generalConsultInfo = {
+  housingPreference: {
+    province: { code: '11', name: '서울특별시' },
+    district: { code: '11440', name: '마포구' },
+    neighborhood: { code: '11440-SEOGYO', name: '서교동' },
+    housingType: 'OFFICETEL',
+    transactionType: 'JEONSE',
+    areaRange: { min: 10, max: 20, label: '10~20평' },
+  },
+  currentAsset: 45000000,
+  monthlySaving: 900000,
+  targetDate: '2031-08',
+  // 'YES' | 'NO' | 'UNDECIDED'. 선택 정보라 이번 화면에서는 표시하지 않는다.
+  loanPreference: 'UNDECIDED',
 }
 
 // 가장 가까운 예정 상담 하나. 상담 목록 API가 생기면 이 자리를 그 응답으로 바꾸면 된다.

@@ -99,6 +99,23 @@ export const GUGUN_BY_SIDO = {
   50: [],
 }
 
+// 구/군 코드로 찾는 동(읍/면/동) 목록. 상담 예약의 희망 주거 조건처럼 동 단위까지 필요한
+// 화면에서만 쓴다 - 시연에 필요한 구/군만 채워뒀고, 나머지는 GUGUN_BY_SIDO의 빈 배열과
+// 같은 방식으로 빈 배열([])로 둔다.
+export const DONG_BY_GUGUN = {
+  11440: [
+    { code: '11440-SEOGYO', name: '서교동' },
+    { code: '11440-HAPJEONG', name: '합정동' },
+    { code: '11440-YEONNAM', name: '연남동' },
+    { code: '11440-MANGWON', name: '망원동' },
+  ],
+  11200: [
+    { code: '11200-SEONGSU1', name: '성수동1가' },
+    { code: '11200-SEONGSU2', name: '성수동2가' },
+  ],
+}
+
+// 구/군 코드로 "시/도 구/군" 라벨을 찾는다 (진단 결과 팝업의 조건 요약줄 등에 사용)
 export function getRegionLabel(gugunCode) {
   for (const sido of SIDO_LIST) {
     const gugun = GUGUN_BY_SIDO[sido.code]?.find((item) => item.code === gugunCode)
