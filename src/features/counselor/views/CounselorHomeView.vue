@@ -1,11 +1,12 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import AppHeader from '@/shared/components/molecules/AppHeader.vue'
 import CounselorConsultationCard from '@/features/counselor/components/CounselorConsultationCard.vue'
-import { counselorConsultations } from '@/features/consult/data/counselors'
 import { CURRENT_COUNSELOR_ID } from '@/features/consult/constants/role'
+import { CATEGORY_FROM_API_VALUES } from '@/features/consult/constants/categories'
+import { getCounselorConsultations } from '@/features/consult/api/consultApi'
 
 const router = useRouter()
 
@@ -15,11 +16,41 @@ function toDateKey(date) {
 }
 const todayKey = toDateKey(new Date())
 
-// 별도 상담사 인증 없이, 지금 로그인한 상담사를 하나의 Mock id로 고정해두고
-// 그 상담사에게 예약된 상담만 걸러서 보여준다.
-const myReservations = computed(() =>
-  counselorConsultations.filter((item) => item.counselorId === CURRENT_COUNSELOR_ID),
-)
+/* ── 예약된 상담 목록 조회 ─────────────────────────────────────
+   원래는 Mock counselorConsultations를 counselorId로 필터링했지만, 이제 실제 API
+   응답을 같은 모양으로 다듬어 그 자리에 채운다 - 아래 정렬/분류 computed는 손대지 않는다.
+   ConsultMyView.loadConsultations()와 같은 패턴. */
+
+const myReservations = ref([])
+const isLoading = ref(true)
+const loadError = ref(false)
+
+async function loadReservations() {
+  isLoading.value = true
+  loadError.value = false
+
+  try {
+    const items = await getCounselorConsultations(CURRENT_COUNSELOR_ID)
+    myReservations.value = (items ?? []).map((item) => ({
+      reservationId: item.reservationId,
+      userName: item.userName,
+      // API의 category는 백엔드 enum(GOAL/ASSET 등)이라, 카드가 쓰는 프론트 내부
+      // 코드(GOAL_SETTING/ASSET_MANAGEMENT 등)로 되돌려야 기존 라벨 변환이 그대로 맞는다.
+      category: CATEGORY_FROM_API_VALUES[item.category] ?? item.category,
+      reservationDate: item.reservationDate,
+      // "14:00:00" -> "14:00". 새 날짜 라이브러리 없이 앞 5글자만 쓴다.
+      reservationTime: (item.reservationTime ?? '').slice(0, 5),
+      status: item.status,
+    }))
+  } catch {
+    loadError.value = true
+    myReservations.value = []
+  } finally {
+    isLoading.value = false
+  }
+}
+
+onMounted(loadReservations)
 
 function toSortableDateTime(item) {
   return `${item.reservationDate}T${item.reservationTime}`
@@ -95,7 +126,9 @@ function goToChat(reservationId) {
           @enter-chat="goToChat"
         />
       </div>
-      <p v-else class="counselor-home-view__empty-text">오늘 예정된 상담이 없습니다.</p>
+      <p v-else-if="!isLoading" class="counselor-home-view__empty-text">
+        {{ loadError ? '상담 목록을 불러오지 못했습니다.' : '오늘 예정된 상담이 없습니다.' }}
+      </p>
     </section>
 
     <section class="counselor-home-view__section">
@@ -115,7 +148,9 @@ function goToChat(reservationId) {
           @enter-chat="goToChat"
         />
       </div>
-      <p v-else class="counselor-home-view__empty-text">다가오는 상담이 없습니다.</p>
+      <p v-else-if="!isLoading" class="counselor-home-view__empty-text">
+        {{ loadError ? '상담 목록을 불러오지 못했습니다.' : '다가오는 상담이 없습니다.' }}
+      </p>
     </section>
   </div>
 </template>
