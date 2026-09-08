@@ -13,7 +13,7 @@ import {
   fetchGoalMarketTrend,
   fetchGoalSummary,
 } from '@/features/goal/api/goalApi'
-import { toMarketAlertViewModel } from '@/features/goal/utils/marketAlertViewModel'
+import { toMarketAlertViewModel } from '@/shared/utils/marketAlertViewModel'
 
 export const useGoalStore = defineStore('goal', () => {
   // 조건 입력 플로우가 받아온 추천 대안 목록. 대안을 내지 못한 알고리즘은 응답에서 빠지므로

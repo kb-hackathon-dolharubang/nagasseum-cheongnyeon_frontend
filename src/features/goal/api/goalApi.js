@@ -1,4 +1,7 @@
 import httpClient from '@/shared/api/httpClient'
+import { fetchGoalSummary, fetchGoalMarketTrend } from '@/shared/api/goalSummaryApi'
+
+export { fetchGoalSummary, fetchGoalMarketTrend }
 
 // null/undefined/빈 문자열은 쿼리에서 제외한다 (백엔드 @NotBlank 검증 400 방지)
 function toRecommendationParams(condition) {
@@ -66,14 +69,3 @@ export async function postGoal(payload) {
   return data.data
 }
 
-// 홈 화면 매물 시세 변화 카드용 데이터
-export async function fetchGoalMarketTrend() {
-  const { data } = await httpClient.get('/api/v1/goals/market-trend')
-  return data.data
-}
-
-// 홈 화면 목표 달성 요약 카드용 데이터
-export async function fetchGoalSummary() {
-  const { data } = await httpClient.get('/api/v1/goals/summary')
-  return data.data
-}

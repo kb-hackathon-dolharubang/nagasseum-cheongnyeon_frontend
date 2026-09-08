@@ -3,12 +3,8 @@ import { defineStore } from 'pinia'
 
 import { HOUSING_TYPE_LABEL, DEAL_TYPE_LABEL } from '@/shared/constants/housing'
 
-import { fetchGoalSummary, fetchGoalMarketTrend } from '@/features/goal/api/goalApi'
-import { getAssetSummary } from '@/features/asset/api/assetApi'
-import {
-  toMarketAlertViewModel,
-  toHomeMarketInsightLabel,
-} from '@/features/goal/utils/marketAlertViewModel'
+import { fetchGoalSummary, fetchGoalMarketTrend, getAssetSummary } from '@/features/home/api/homeApi'
+import { toMarketAlertViewModel, toHomeMarketInsightLabel } from '@/shared/utils/marketAlertViewModel'
 
 // 레벨/알림 배지는 홈 화면 API 명세(목표 요약 · 자산 요약) 어디에도 없는 항목이라
 // 연동할 API가 아직 없다. 화면 골격을 채우기 위한 임시 표시값.
