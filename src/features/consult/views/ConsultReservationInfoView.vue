@@ -138,6 +138,9 @@ function handleConfirm() {
   if (!canConfirm.value) return
 
   const payload = {
+    // 실제 예약 API가 생기면 POST 응답의 reservationId로 바뀐다. 지금은 확정 화면을
+    // 만들기 위한 임시 Mock 값이다.
+    reservationId: 1,
     counselorId: Number(props.counselorId),
     consultationType,
     category: selectedCategory.value,

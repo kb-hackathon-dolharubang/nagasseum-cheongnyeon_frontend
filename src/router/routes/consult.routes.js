@@ -3,10 +3,12 @@ import {
   ConsultReservationView,
   ConsultReservationInfoView,
   ConsultReservationCompleteView,
+  ConsultMyView,
 } from '@/features/consult'
 
 export const consultRoutes = [
   { path: 'consult', name: 'consult', component: ConsultView },
+  { path: 'consult/my', name: 'consult-my', component: ConsultMyView },
   // 정적 경로(complete)를 동적 :counselorId 라우트보다 먼저 등록해 'complete'가
   // counselorId로 잘못 매칭되지 않게 한다.
   {
