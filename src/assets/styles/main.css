@@ -1,9 +1,269 @@
-* {
-  box-sizing: border-box;
+@font-face {
+  font-family: 'NeoDunggeunmo';
+  src: url('../fonts/neodgm.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
 }
 
-body {
-  margin: 0;
+@font-face {
+  font-family: 'NanumHuman';
+  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2501-1@1.1/NanumHumanTTFExtraLight.woff2')
+    format('woff2');
+  font-weight: 200;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'NanumHuman';
+  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2501-1@1.1/NanumHumanTTFLight.woff2')
+    format('woff2');
+  font-weight: 300;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'NanumHuman';
+  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2501-1@1.1/NanumHumanTTFRegular.woff2')
+    format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'NanumHuman';
+  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2501-1@1.1/NanumHumanTTFBold.woff2')
+    format('woff2');
+  font-weight: 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'NanumHuman';
+  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2501-1@1.1/NanumHumanTTFExtraBold.woff2')
+    format('woff2');
+  font-weight: 800;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'NanumHuman';
+  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2501-1@1.1/NanumHumanTTFHeavy.woff2')
+    format('woff2');
+  font-weight: 900;
+  font-display: swap;
+}
+
+html {
+  scrollbar-gutter: stable;
+}
+
+:root {
+  --text: #9aa09a;
+  --text-h: #ffffff;
+  --bg: #111111;
+  --border: #262626;
+  --accent: #e3ffe8;
+  --accent-bg: rgba(227, 255, 232, 0.1);
+  --accent-border: rgba(227, 255, 232, 0.5);
+
+  --color-point: #c1442e;
+  --color-mint-strong: #c1e8c8;
+  --color-mint-pale: #cdedd3;
+  /* 연한 초록(--color-primary-soft) 배경 버튼의 hover 전용 톤. 라이트/다크 공통 고정값. */
+  --color-primary-soft-hover: #c2dec7;
+  --color-mint-deep: #16281c;
+  --color-card-highlight: #f7ffd1;
+  --color-card-sub: #effab8;
+  --color-progress-fill: #1d6b3f;
+  --color-toggle-off: #383e3a;
+  --color-toggle-thumb-off: #c7ccc8;
+  --color-nav-bg: #a6c7b7;
+  --color-nav-active-bg: #e3ffe8;
+  --color-nav-active-icon: #16281c;
+  --color-nav-inactive-icon: #3e5a49;
+  --color-kakao-bg: #fee500;
+  --color-kakao-text: #191600;
+
+  /*
+    Light/Dark 테마 시맨틱 토큰. 여기 정의된 값은 JS 실행 전(초기 페인트) 안전망이며
+    실제 테마별 값은 아래 [data-theme] 블록에서 덮어쓴다. 기본값은 다크 기준.
+  */
+  --color-app-bg: #111111;
+  --color-surface: #161616;
+  --color-surface-soft: #cdedd3;
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #9aa09a;
+  --color-text-tertiary: #6f766d;
+  --color-primary: #1d6b3f;
+  --color-primary-soft: #e3ffe8;
+  --color-accent: #ffd939;
+  --color-border: #262626;
+  --color-progress-active: #c1e8c8;
+  --color-progress-inactive: #262626;
+  --color-nav-active: #16281c;
+  --color-nav-inactive: #3e5a49;
+
+  /* 카드 없이 페이지 배경 위에 바로 놓이는 강조 제목/라벨용. 다크에서는 기존 밝은
+     민트색을 유지하고, 라이트에서는 밝은 배경에서도 읽히는 진한 초록을 쓴다. */
+  --color-heading-accent: #e3ffe8;
+
+  /* 팝업(BaseModal) 배경 전용 토큰. 앱 배경(--color-app-bg)과 같은 값을 쓴다. */
+  --modal-surface: #111111;
+
+  /* 홈 화면에서 --color-text-primary를 쓰던 자리 중, 라이트에서만 353934로
+     바꾸고 싶은 곳(인사말/진행 중인 목표 제목 등) 전용. 다크 값은 동일하게 흰색. */
+  --home-text-primary: #ffffff;
+  /* climb-card-ink는 배경(퀘스트 배지·CTA 버튼)에도 쓰여서 텍스트 전용으로 바꿀 수
+     없다. 텍스트에만 쓰는 자리는 이 토큰으로 따로 뺐다. */
+  --home-ink-text: #12281c;
+
+  /* 카드마다 다크 모드에서만 고유한 색을 유지해야 하는 곳에 쓰는 전용 토큰 */
+  --climb-card-surface: #cdedd3;
+  --climb-card-ink: #12281c;
+  --climb-card-ink-muted: #6f8b79;
+  /* NEW QUEST 배지·"목표 설정하러 가기" 버튼 배경/글자 전용. climb-card-ink는 카드 제목
+     글자색으로도 같이 쓰여서 값을 못 바꾸므로 배지·버튼만 따로 뺐다. */
+  --climb-card-cta-bg: #12281c;
+  --climb-card-cta-text: #ffd939;
+  --asset-tile-surface: #cdedd3;
+  --asset-tile-label: #4f6f5b;
+  --asset-tile-ink-muted: #6f8b79;
+  --total-asset-surface: #f7ffd1;
+  --total-asset-label: #12281c;
+  --total-asset-detail: #8a8f63;
+  --empty-asset-surface: #f7ffd1;
+  --empty-asset-heading: #16281c;
+  --base-badge-mint-bg: #c1e8c8;
+  --base-badge-mint-text: #16281c;
+  --base-button-primary-bg: #e3ffe8;
+  --base-button-primary-text: #16281c;
+
+  --sans: 'NeoDunggeunmo', system-ui, 'Segoe UI', Roboto, sans-serif;
+  /* Journey/레벨 등 게이미피케이션 영역 밖(일반 금융 정보·UI 텍스트)에서 쓰는 일반 폰트. */
+  --sans-normal:
+    'NanumHuman', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Segoe UI', system-ui,
+    Roboto, 'Noto Sans KR', sans-serif;
+
+  font: 18px/145% var(--sans-normal);
+  letter-spacing: 0.18px;
+  color-scheme: dark;
+  color: var(--text);
+  background: var(--bg);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  @media (max-width: 1024px) {
+    font-size: 16px;
+  }
+}
+
+/*
+  실제 테마 전환은 <html data-theme="..."> 속성으로 이루어진다.
+  (src/shared/composables/useTheme.js) 다크 블록은 현재 화면과 동일하게,
+  라이트 블록은 homev2.png 레퍼런스 값으로 채운다.
+*/
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --color-app-bg: #111111;
+  --color-surface: #161616;
+  --color-surface-soft: #cdedd3;
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #9aa09a;
+  --color-text-tertiary: #6f766d;
+  --color-primary: #1d6b3f;
+  --color-primary-soft: #e3ffe8;
+  --color-accent: #ffd939;
+  --color-border: #262626;
+  --color-progress-active: #c1e8c8;
+  --color-progress-inactive: #262626;
+  --color-nav-bg: #a6c7b7;
+  --color-nav-active-bg: #e3ffe8;
+  --color-nav-active: #16281c;
+  --color-nav-inactive: #3e5a49;
+
+  --color-heading-accent: #e3ffe8;
+
+  --modal-surface: #111111;
+
+  --home-text-primary: #ffffff;
+  --home-ink-text: #12281c;
+
+  --climb-card-surface: #f6f3c4;
+  --climb-card-ink: #12281c;
+  --climb-card-ink-muted: #6f8b79;
+  --climb-card-cta-bg: #12281c;
+  --climb-card-cta-text: #ffd939;
+  /* 등반 카드는 배경이 밝은 민트라, 목표 화면과 같은 진한 회색 빈 칸(--color-progress-inactive)을
+     쓰면 카드 톤과 어울리지 않고 튄다. 카드 배경과 잘 섞이는 차분한 톤을 홈 전용으로 둔다. */
+  --climb-card-progress-inactive: #e6e6b2;
+  --asset-tile-surface: #cdedd3;
+  --asset-tile-label: #4f6f5b;
+  --asset-tile-ink-muted: #6f8b79;
+  --total-asset-surface: #f7ffd1;
+  --total-asset-label: #12281c;
+  --total-asset-detail: #8a8f63;
+  --empty-asset-surface: #f7ffd1;
+  --empty-asset-heading: #16281c;
+  --base-badge-mint-bg: #c1e8c8;
+  --base-badge-mint-text: #16281c;
+  --base-button-primary-bg: #e3ffe8;
+  --base-button-primary-text: #16281c;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+
+  --color-app-bg: #f7f8f4;
+  --color-surface: #ffffff;
+  --color-surface-soft: #f6f3c4;
+  --color-text-primary: #10130f;
+  --color-text-secondary: #5b6358;
+  --color-text-tertiary: #8f968c;
+  --color-primary: #1d6b3f;
+  --color-primary-soft: #e8f4ea;
+  --color-accent: #ffd939;
+  --color-border: #e3e7e0;
+  --color-progress-active: #c1e8c8;
+  --color-progress-inactive: #e3e7e0;
+  --color-nav-bg: #ffffff;
+  --color-nav-active-bg: #e8f4ea;
+  --color-nav-active: #1d6b3f;
+  --color-nav-inactive: #6f766d;
+
+  --color-heading-accent: #1d6b3f;
+
+  --modal-surface: #f7f8f4;
+
+  --home-text-primary: #353934;
+
+  --climb-card-surface: #f6f3c4;
+  --climb-card-ink: #353934;
+  --climb-card-ink-muted: #5b6358;
+  /* 다른 primary CTA(--base-button-primary-bg/text)와 같은 초록+흰 글씨 조합으로 맞춘다.
+     climb-card-ink(어두운 배경+노란 글씨)는 밝은 카드 위에서 튀어서 라이트에서만 바꾼다. */
+  --climb-card-cta-bg: #1d6b3f;
+  --climb-card-cta-text: #ffffff;
+  --climb-card-progress-inactive: #e6e6b2;
+  --asset-tile-surface: #ffffff;
+  --asset-tile-label: #8f968c;
+  --asset-tile-ink-muted: #8f968c;
+  --total-asset-surface: #ffffff;
+  --total-asset-label: #5b6358;
+  --total-asset-detail: #8f968c;
+  --empty-asset-surface: #ffffff;
+  --empty-asset-heading: #353934;
+  --base-badge-mint-bg: #f6f3c4;
+  --base-badge-mint-text: #353934;
+  --base-button-primary-bg: #1d6b3f;
+  --base-button-primary-text: #ffffff;
+}
+
+* {
+  box-sizing: border-box;
 }
 
 button,
@@ -11,4 +271,28 @@ input,
 select,
 textarea {
   font: inherit;
+}
+
+body {
+  margin: 0;
+}
+
+h1,
+h2 {
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+/* 카드가 등장할 때 공통으로 쓰는 페이드 + 살짝 떠오르는 진입 모션.
+   여러 feature의 카드 컴포넌트가 animation-name으로 참조한다. */
+@keyframes card-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
