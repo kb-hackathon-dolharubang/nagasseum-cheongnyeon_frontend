@@ -1,3 +1,5 @@
+import { SEED_GOAL, SEED_MEMBER } from '@/mocks/data/seed'
+
 export const mockCompareAssetsSuccess = {
   success: true,
   data: {
@@ -10,10 +12,11 @@ export const mockCompareAssetsSuccess = {
       sufficient: true,
       minimumRequired: null,
     },
-    myMonthlyIncome: 3000000,
+    myMonthlyIncome: SEED_MEMBER.monthlyIncome,
     cohortAverageNetAssets: 45000000,
+    // "내 월 저축액"은 자산 요약(assetBreakdown)·목표 화면과 같은 값(SEED_GOAL.monthlySaving)을 쓴다.
     saving: {
-      mine: 900000,
+      mine: SEED_GOAL.monthlySaving,
       cohortMin: 500000,
       cohortMax: 1200000,
     },

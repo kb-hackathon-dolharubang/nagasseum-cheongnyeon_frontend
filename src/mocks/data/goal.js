@@ -1,5 +1,7 @@
 import { SIDO_LIST, GUGUN_BY_SIDO, findRegionBySigunguCode } from '@/shared/constants/regions'
 
+import { SEED_ASSET_SUMMARY, SEED_GOAL } from '@/mocks/data/seed'
+
 // POST /api/v1/goals/diagnosis 응답 mock.
 // CLAUDE.md가 진단 응답의 정확한 필드 형태를 정의하지 않아 goal/goalHousing ERD를 참고해 추정한 형태 —
 // 실제 백엔드 응답 확정 시 필드명(특히 optionId)을 맞춰야 한다.
@@ -36,8 +38,9 @@ export const mockDiagnosisOptions = [
   },
 ]
 
-// 실제 자산연동 결과가 없어 "현재 인식 자산"을 가상 상수로 둔다 — 실제로는 asset 도메인에서 가져와야 함.
-const MOCK_RECOGNIZED_ASSETS = 250000000
+// "현재 인식 자산"은 asset 도메인의 SEED_ASSET_SUMMARY.totalAssets를 그대로 쓴다(자산 요약
+// 화면에 보이는 총자산과 같은 숫자여야 진단 결과의 "이미 가진 돈"이 의미가 있다).
+const MOCK_RECOGNIZED_ASSETS = SEED_ASSET_SUMMARY.totalAssets
 
 // 지역/주거형태/거래유형별 실제 시세 데이터가 없어 고정 base 중앙값으로 근사한다 — 데모용 근사치.
 const MOCK_MEDIAN_BASE = 460000000
@@ -182,39 +185,55 @@ export function buildMockDiagnosisResult(payload) {
 }
 
 // POST /api/v1/goals mock 저장 응답 — 실제 DB 저장 없이 성공 응답만 흉내낸다.
-export const mockGoalSaveResponse = { goalId: 1 }
+export const mockGoalSaveResponse = { goalId: SEED_GOAL.id }
 
 // GET /api/v1/goals/{goalId}/detail 응답 mock ("목표 달성 상세 조회" API 명세 기준).
 // 저축 기록이 3건 미만이면 forecasts에서 RECENT_AVERAGE가, 0건이면 FIXED 외 항목이 모두 빠진다.
+// 필드 전부가 SEED_GOAL에서 나오므로, 홈 화면 요약(mockGoalSummaryHome)과 항상 같은 목표를 가리킨다.
 export const mockGoalDetail = {
-  goalId: 1,
-  goalType: 'HOUSING',
-  status: 'ACTIVE',
+  goalId: SEED_GOAL.id,
+  goalType: SEED_GOAL.goalType,
+  status: SEED_GOAL.status,
   housing: {
-    regionCode: '11680',
-    housingType: 'OFFICETEL',
-    dealType: 'JEONSE',
-    areaMin: 10,
-    areaMax: 20,
-    depositMin: 300000000,
-    depositMax: 600000000,
+    regionCode: SEED_GOAL.housing.regionCode,
+    housingType: SEED_GOAL.housing.housingType,
+    dealType: SEED_GOAL.housing.dealType,
+    areaMin: SEED_GOAL.housing.areaMin,
+    areaMax: SEED_GOAL.housing.areaMax,
+    depositMin: SEED_GOAL.housing.depositMin,
+    depositMax: SEED_GOAL.housing.depositMax,
   },
-  targetDate: '2028-09-30',
+  targetDate: SEED_GOAL.targetDate,
   progress: {
-    targetAmount: 360000000,
-    currentAmount: 347000000,
-    remainingAmount: 13000000,
-    achievementRate: 96.4,
+    targetAmount: SEED_GOAL.targetAmount,
+    currentAmount: SEED_GOAL.progress.currentAmount,
+    remainingAmount: SEED_GOAL.progress.remainingAmount,
+    achievementRate: SEED_GOAL.progress.achievementRate,
   },
   savingStatus: {
-    fixedSaving: 500000,
-    recentAverageSaving: 620000,
-    latestSaving: 700000,
+    fixedSaving: SEED_GOAL.monthlySaving,
+    recentAverageSaving: SEED_GOAL.savingHistory.recentAverageSaving,
+    latestSaving: SEED_GOAL.savingHistory.latestSaving,
   },
   forecasts: [
-    { basis: 'FIXED', monthlySaving: 500000, expectedDate: '2028-09-30', monthsDiff: 0 },
-    { basis: 'RECENT_AVERAGE', monthlySaving: 620000, expectedDate: '2028-04-30', monthsDiff: 5 },
-    { basis: 'LATEST', monthlySaving: 700000, expectedDate: '2028-02-29', monthsDiff: 7 },
+    {
+      basis: 'FIXED',
+      monthlySaving: SEED_GOAL.monthlySaving,
+      expectedDate: SEED_GOAL.targetDate,
+      monthsDiff: 0,
+    },
+    {
+      basis: 'RECENT_AVERAGE',
+      monthlySaving: SEED_GOAL.savingHistory.recentAverageSaving,
+      expectedDate: '2028-04-30',
+      monthsDiff: 5,
+    },
+    {
+      basis: 'LATEST',
+      monthlySaving: SEED_GOAL.savingHistory.latestSaving,
+      expectedDate: '2028-02-29',
+      monthsDiff: 7,
+    },
   ],
 }
 
@@ -223,9 +242,9 @@ export const mockGoalDetail = {
 // 코드(regionCode)로 내려오고, 전세라 월세는 null이 아니라 0으로 정규화된 값이 온다.
 // targetDate는 날짜가 아니라 YYYY-MM이다.
 export const mockGoal = {
-  goalId: 1,
-  status: 'ACTIVE',
-  regionCode: '11680',
+  goalId: SEED_GOAL.id,
+  status: SEED_GOAL.status,
+  regionCode: SEED_GOAL.housing.regionCode,
   propertyType: mockGoalDetail.housing.housingType,
   tradeType: mockGoalDetail.housing.dealType,
   sizeMin: mockGoalDetail.housing.areaMin,
@@ -238,8 +257,8 @@ export const mockGoal = {
   targetDate: mockGoalDetail.targetDate.slice(0, 7),
   targetAmount: mockGoalDetail.progress.targetAmount,
   targetRentMiddleAmount: 350000000,
-  createdAt: '2026-08-05T14:32:10',
-  updatedAt: '2026-08-06T17:21:44',
+  createdAt: SEED_GOAL.createdAt,
+  updatedAt: SEED_GOAL.updatedAt,
 }
 
 // GET /api/v1/goals/{goalId}/simulations/monthly-saving 응답 mock.
@@ -269,18 +288,18 @@ export function applyMockGoalUpdate({ monthlySavings }) {
 // 항상 내려온다(null 아님). 최신 예측이 실패하면 latestPredictedMarketAmount /
 // predictionChangeAmount만 null이 된다.
 export const mockGoalMarketTrend = {
-  regionName: '서울 강남구',
-  housingType: 'OFFICETEL',
-  dealType: 'JEONSE',
-  areaMin: 10,
-  areaMax: 20,
+  regionName: SEED_GOAL.housing.regionName,
+  housingType: SEED_GOAL.housing.housingType,
+  dealType: SEED_GOAL.housing.dealType,
+  areaMin: SEED_GOAL.housing.areaMin,
+  areaMax: SEED_GOAL.housing.areaMax,
   updatedYm: '2026-07',
   currentMiddleAmount: 95000000,
   predictionTargetYm: '2027-08',
   initialMiddleAmount: 100000000,
   latestPredictedMarketAmount: 105000000,
   predictionChangeAmount: 5000000,
-  targetAmount: 100000000,
+  targetAmount: SEED_GOAL.targetAmount,
   maintainEta: '2027-08',
   reflectEta: '2027-03',
 }
@@ -288,30 +307,31 @@ export const mockGoalMarketTrend = {
 // GET /api/v1/goals/active 응답 mock ("활성 목표 조회" API 명세 기준)
 export const mockActiveGoal = {
   goalId: mockGoal.goalId,
-  goalType: 'HOUSING',
-  status: 'ACTIVE',
+  goalType: SEED_GOAL.goalType,
+  status: SEED_GOAL.status,
   targetAmount: mockGoal.targetAmount,
   targetDate: mockGoal.targetDate,
 }
 
-// GET /api/v1/goals/summary 응답 mock (홈 화면 API 명세서 예시값 그대로)
+// GET /api/v1/goals/summary 응답 mock (홈 화면). 상세 화면과 같은 SEED_GOAL을 가리키므로
+// goalId/targetAmount/targetDate/progress가 mockGoalDetail과 항상 일치한다.
 export const mockGoalSummaryHome = {
-  goalId: 42,
-  goalType: 'HOUSING',
+  goalId: SEED_GOAL.id,
+  goalType: SEED_GOAL.goalType,
   housing: {
-    regionName: '서울 강남구',
-    housingType: 'OFFICETEL',
-    dealType: 'JEONSE',
-    areaMin: 10,
-    areaMax: 20,
+    regionName: SEED_GOAL.housing.regionName,
+    housingType: SEED_GOAL.housing.housingType,
+    dealType: SEED_GOAL.housing.dealType,
+    areaMin: SEED_GOAL.housing.areaMin,
+    areaMax: SEED_GOAL.housing.areaMax,
   },
-  targetAmount: 100000000,
-  targetDate: '2027-08',
+  targetAmount: SEED_GOAL.targetAmount,
+  targetDate: SEED_GOAL.targetDate.slice(0, 7),
   progress: {
-    currentAmount: 20000000,
-    remainingAmount: 80000000,
-    achievementRate: 20.0,
-    remainingMonths: 12,
+    currentAmount: SEED_GOAL.progress.currentAmount,
+    remainingAmount: SEED_GOAL.progress.remainingAmount,
+    achievementRate: SEED_GOAL.progress.achievementRate,
+    remainingMonths: Math.max(monthsBetween(currentYm(), SEED_GOAL.targetDate.slice(0, 7)), 0),
   },
 }
 

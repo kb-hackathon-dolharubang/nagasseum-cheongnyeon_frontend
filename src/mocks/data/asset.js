@@ -1,3 +1,10 @@
+import {
+  SEED_ASSET_INSTITUTIONS,
+  SEED_ASSET_SUMMARY,
+  SEED_MANUAL_ASSETS,
+  SEED_MEMBER,
+} from '@/mocks/data/seed'
+
 export const mockOrganizationsResponse = {
   success: true,
   data: [
@@ -199,90 +206,26 @@ export const mockConnectionFailureResponse = {
 }
 
 // 노션 "자산 요약 조회"(GET /api/v1/assets/summary, @LoginMember) 응답 형태.
-// mockAssetAccountsResponse의 계좌 합산액과 일치하도록 값을 맞춰 뒀다 (총자산 36,530,000 = 현금성 7,600,000
-// + 예적금 21,700,000 + 청약 1,080,000 + 투자자산 5,300,000 + 기타 850,000).
+// 값 전부가 SEED_ASSET_SUMMARY(= SEED_ASSET_INSTITUTIONS에서 파생)에서 나오므로
+// mockAssetAccountsResponse의 계좌 합산액과 항상 일치한다.
 export const mockAssetSummaryResponse = {
-  memberId: 1,
-  totalAssets: 36530000,
-  loanBalance: 112000000,
-  netAssets: -75470000,
-  monthlySavings: 450000,
+  memberId: SEED_MEMBER.id,
+  totalAssets: SEED_ASSET_SUMMARY.totalAssets,
+  loanBalance: SEED_ASSET_SUMMARY.loanBalance,
+  netAssets: SEED_ASSET_SUMMARY.netAssets,
+  monthlySavings: SEED_ASSET_SUMMARY.monthlySavings,
   syncedAt: '2026-08-02T21:40:00+09:00',
   assetBreakdown: {
     cashAssets: {
-      total: 29300000,
-      accounts: [
-        {
-          institutionName: '토스뱅크',
-          accountType: 'DEPOSIT',
-          productName: '파킹통장',
-          accountDisplay: '****-**-1234',
-          balance: 6400000,
-        },
-        {
-          institutionName: '카카오뱅크',
-          accountType: 'DEPOSIT',
-          productName: '입출금통장',
-          accountDisplay: '****-**-5678',
-          balance: 1200000,
-        },
-        {
-          institutionName: '카카오뱅크',
-          accountType: 'SAVINGS',
-          productName: '자유적금',
-          accountDisplay: '****-**-4321',
-          balance: 8200000,
-        },
-        {
-          institutionName: '신한은행',
-          accountType: 'SAVINGS',
-          productName: '청년희망적금',
-          accountDisplay: '****-**-8765',
-          balance: 9500000,
-        },
-        {
-          institutionName: 'KB국민은행',
-          accountType: 'SAVINGS',
-          productName: '정기예금',
-          accountDisplay: '****-**-1122',
-          balance: 4000000,
-        },
-      ],
+      total: SEED_ASSET_SUMMARY.cashAssetsTotal,
+      accounts: SEED_ASSET_SUMMARY.cashAccounts,
     },
     investmentAssets: {
-      total: 5300000,
-      accounts: [
-        {
-          institutionName: '토스증권',
-          accountType: 'STOCK',
-          productName: 'CMA',
-          accountDisplay: '****-**-9900',
-          balance: 2100000,
-        },
-        {
-          institutionName: '토스증권',
-          accountType: 'FUND',
-          productName: '글로벌리츠펀드',
-          accountDisplay: '****-**-9911',
-          balance: 3200000,
-        },
-      ],
+      total: SEED_ASSET_SUMMARY.investmentAssetsTotal,
+      accounts: SEED_ASSET_SUMMARY.investmentAccounts,
     },
   },
-  loans: [
-    {
-      institutionName: '신한은행',
-      loanName: '신한 마이카대출',
-      accountDisplay: '****-**-7799',
-      loanBalance: 12000000,
-    },
-    {
-      institutionName: 'KB국민은행',
-      loanName: 'KB주택담보대출',
-      accountDisplay: '****-**-5566',
-      loanBalance: 100000000,
-    },
-  ],
+  loans: SEED_ASSET_SUMMARY.loans,
 }
 
 export const mockAssetSummaryNotFoundResponse = {
@@ -296,16 +239,9 @@ export const mockAssetSummaryNotFoundResponse = {
 
 // 노션 "[추가] 수동 자산" CRUD(POST/GET/PUT/DELETE /api/v1/assets/manual)가 다루는 목록.
 // assetType "DEPOSIT"은 계좌 목록 조회의 accountType과 이름은 같지만 의미가 다르다 (예: 현재 거주 보증금).
-// 핸들러가 실제로 값을 더하고 빼며 조작하므로 let으로 선언한다.
-export let mockManualAssetsResponse = [
-  {
-    id: 1,
-    assetType: 'DEPOSIT',
-    amount: 50000000,
-    createdAt: '2026-06-01T10:00:00+09:00',
-    updatedAt: '2026-06-01T10:00:00+09:00',
-  },
-]
+// 핸들러가 실제로 값을 더하고 빼며 조작하므로 let으로 선언하고, 초기값은 SEED_MANUAL_ASSETS를
+// 복사해 시드 원본이 변형되지 않게 한다.
+export let mockManualAssetsResponse = [...SEED_MANUAL_ASSETS]
 
 export function setMockManualAssets(nextAssets) {
   mockManualAssetsResponse = nextAssets
@@ -321,189 +257,7 @@ export const mockManualAssetNotFoundResponse = {
 }
 
 // Figma "07 자산 상세 화면" 목업. [추가] 계좌 목록 조회 API(GET /api/v1/assets/accounts, @LoginMember) 응답 형태.
-// 노션 "[추가] 계좌 목록 조회" 명세에 등장하는 accountType(DEPOSIT/SAVINGS/STOCK/FUND/SUBSCRIPTION)과
-// assetCategory(현금성자산/예적금/투자자산/청약/기타)를 모두 최소 1개씩, 대출 계좌도 포함해 커버한다.
+// 계좌 원본은 SEED_ASSET_INSTITUTIONS 하나뿐이라 mockAssetSummaryResponse의 합산액과 항상 일치한다.
 export const mockAssetAccountsResponse = {
-  institutions: [
-    {
-      institutionName: '토스뱅크',
-      assetAccounts: [
-        {
-          accountType: 'DEPOSIT',
-          assetCategory: '현금성자산',
-          accountDisplay: '****-**-1234',
-          productName: '파킹통장',
-          currentValue: 6400000,
-          valuationAmount: null,
-          depositReceived: null,
-          valuationPl: null,
-          purchaseAmount: null,
-          earningsRate: null,
-          startDate: '2024-02-10',
-          maturityDate: null,
-        },
-      ],
-      loanAccounts: [],
-    },
-    {
-      institutionName: '카카오뱅크',
-      assetAccounts: [
-        {
-          accountType: 'DEPOSIT',
-          assetCategory: '현금성자산',
-          accountDisplay: '****-**-5678',
-          productName: '입출금통장',
-          currentValue: 1200000,
-          valuationAmount: null,
-          depositReceived: null,
-          valuationPl: null,
-          purchaseAmount: null,
-          earningsRate: null,
-          startDate: '2023-11-02',
-          maturityDate: null,
-        },
-        {
-          accountType: 'SAVINGS',
-          assetCategory: '예적금',
-          accountDisplay: '****-**-4321',
-          productName: '자유적금',
-          currentValue: 8200000,
-          valuationAmount: null,
-          depositReceived: null,
-          valuationPl: null,
-          purchaseAmount: null,
-          earningsRate: null,
-          startDate: '2025-03-01',
-          maturityDate: '2027-03-01',
-        },
-      ],
-      loanAccounts: [],
-    },
-    {
-      institutionName: '신한은행',
-      assetAccounts: [
-        {
-          accountType: 'SAVINGS',
-          assetCategory: '예적금',
-          accountDisplay: '****-**-8765',
-          productName: '청년희망적금',
-          currentValue: 9500000,
-          valuationAmount: null,
-          depositReceived: null,
-          valuationPl: null,
-          purchaseAmount: null,
-          earningsRate: null,
-          startDate: '2024-12-01',
-          maturityDate: '2026-12-01',
-        },
-      ],
-      loanAccounts: [
-        {
-          loanName: '신한 마이카대출',
-          accountDisplay: '****-**-7799',
-          loanBalance: 12000000,
-          startDate: '2025-01-10',
-          endDate: '2030-01-10',
-        },
-      ],
-    },
-    {
-      institutionName: 'KB국민은행',
-      assetAccounts: [
-        {
-          accountType: 'SAVINGS',
-          assetCategory: '예적금',
-          accountDisplay: '****-**-1122',
-          productName: '정기예금',
-          currentValue: 4000000,
-          valuationAmount: null,
-          depositReceived: null,
-          valuationPl: null,
-          purchaseAmount: null,
-          earningsRate: null,
-          startDate: '2023-06-01',
-          maturityDate: '2027-06-01',
-        },
-        {
-          accountType: 'SUBSCRIPTION',
-          assetCategory: '청약',
-          accountDisplay: '****-**-3344',
-          productName: '주택청약종합저축',
-          currentValue: 1080000,
-          valuationAmount: null,
-          depositReceived: null,
-          valuationPl: null,
-          purchaseAmount: null,
-          earningsRate: null,
-          startDate: '2021-01-15',
-          maturityDate: null,
-        },
-      ],
-      loanAccounts: [
-        {
-          loanName: 'KB주택담보대출',
-          accountDisplay: '****-**-5566',
-          loanBalance: 100000000,
-          startDate: '2022-03-01',
-          endDate: '2032-03-01',
-        },
-      ],
-    },
-    {
-      institutionName: '토스증권',
-      assetAccounts: [
-        {
-          accountType: 'STOCK',
-          assetCategory: '투자자산',
-          accountDisplay: '****-**-9900',
-          productName: 'CMA',
-          currentValue: null,
-          valuationAmount: 2100000,
-          depositReceived: 2000000,
-          valuationPl: 100000,
-          purchaseAmount: 2000000,
-          earningsRate: 5.0,
-          startDate: '2024-05-20',
-          maturityDate: null,
-        },
-        {
-          accountType: 'FUND',
-          assetCategory: '투자자산',
-          accountDisplay: '****-**-9911',
-          productName: '글로벌리츠펀드',
-          currentValue: null,
-          valuationAmount: 3200000,
-          depositReceived: 3500000,
-          valuationPl: -300000,
-          purchaseAmount: 3500000,
-          earningsRate: -8.57,
-          startDate: '2024-09-12',
-          maturityDate: null,
-        },
-      ],
-      loanAccounts: [],
-    },
-    {
-      institutionName: '미래에셋증권',
-      assetAccounts: [
-        {
-          // CODEF가 아직 표준 accountType으로 분류하지 못한 상품 예시.
-          // assetStore의 ACCOUNT_TYPE_LABELS에 없는 값이라 assetCategory 라벨로 대체 표기되는지 확인하는 용도.
-          accountType: 'FOREIGN_CURRENCY',
-          assetCategory: '기타',
-          accountDisplay: '****-**-2233',
-          productName: '외화 RP',
-          currentValue: 850000,
-          valuationAmount: null,
-          depositReceived: null,
-          valuationPl: null,
-          purchaseAmount: null,
-          earningsRate: null,
-          startDate: '2025-02-20',
-          maturityDate: null,
-        },
-      ],
-      loanAccounts: [],
-    },
-  ],
+  institutions: SEED_ASSET_INSTITUTIONS,
 }
