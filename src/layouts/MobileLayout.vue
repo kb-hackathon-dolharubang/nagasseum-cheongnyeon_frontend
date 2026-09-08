@@ -8,6 +8,7 @@ import {
   HomeIcon,
   GoalIcon,
   PolicyIcon as CompareIcon,
+  ConsultIcon,
   MyIcon,
 } from '@/shared/components/atoms/navigation/BottomNav/icons'
 import { fetchActiveGoal } from '@/features/goal/api/goalApi'
@@ -21,6 +22,7 @@ const navItems = [
   { label: '홈', icon: HomeIcon, to: '/home' },
   { label: '목표', icon: GoalIcon, matchNames: ['goal-detail', 'goal-empty'] },
   { label: '비교', icon: CompareIcon, to: '/compare' },
+  { label: '상담', icon: ConsultIcon, to: '/consult' },
   { label: '마이', icon: MyIcon, to: '/my' },
 ]
 
@@ -34,6 +36,9 @@ const HIDDEN_NAV_ROUTE_NAMES = [
   'edit-info',
   'asset-link-additional',
   'asset-detail',
+  // 예약 화면은 아직 준비 중인 placeholder라, 상담 탭 흐름에서 벗어난 하위 화면임을
+  // 보여주기 위해 다른 상세 화면들과 같이 하단 탭을 숨긴다.
+  'consult-reservation',
 ]
 
 const activeIndex = computed(() =>
