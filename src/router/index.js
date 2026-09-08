@@ -11,6 +11,7 @@ import { compareRoutes } from '@/router/routes/compare.routes'
 import { homeRoutes } from '@/router/routes/home.routes'
 import { goalRoutes } from '@/router/routes/goal.routes'
 import { memberRoutes } from '@/router/routes/member.routes'
+import { policyRoutes } from '@/router/routes/policy.routes'
 
 const AUTH_REQUIRED_ROUTE_NAMES = [
   'deposit-info',
@@ -21,6 +22,7 @@ const AUTH_REQUIRED_ROUTE_NAMES = [
   'asset-detail',
   'home',
   'compare',
+  'policy',
   'my',
   'edit-info',
 ]
@@ -41,6 +43,7 @@ const routes = [
       ...homeRoutes,
       ...goalRoutes,
       ...compareRoutes,
+      ...policyRoutes,
       ...memberRoutes,
       ...assetDetailRoutes,
       ...assetManagementRoutes,

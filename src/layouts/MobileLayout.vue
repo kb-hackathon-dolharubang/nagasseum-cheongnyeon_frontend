@@ -7,7 +7,7 @@ import BaseBottomNav from '@/shared/components/atoms/navigation/BottomNav/BaseBo
 import {
   HomeIcon,
   GoalIcon,
-  PolicyIcon as CompareIcon,
+  PolicyIcon,
   MyIcon,
 } from '@/shared/components/atoms/navigation/BottomNav/icons'
 import { fetchActiveGoal } from '@/features/goal/api/goalApi'
@@ -20,7 +20,7 @@ const router = useRouter()
 const navItems = [
   { label: '홈', icon: HomeIcon, to: '/home' },
   { label: '목표', icon: GoalIcon, matchNames: ['goal-detail', 'goal-empty'] },
-  { label: '비교', icon: CompareIcon, to: '/compare' },
+  { label: '정책', icon: PolicyIcon, to: '/policy' },
   { label: '마이', icon: MyIcon, to: '/my' },
 ]
 
