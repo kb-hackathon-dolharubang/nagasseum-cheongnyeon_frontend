@@ -16,7 +16,11 @@ import {
 } from '@/features/consult/data/counselors'
 import { CONSULTATION_STATUS_META } from '@/features/consult/constants/status'
 import { CURRENT_ROLE, CURRENT_COUNSELOR_ID } from '@/features/consult/constants/role'
-import { getConsultationMessages, sendConsultationMessage } from '@/features/consult/api/consultApi'
+import {
+  getConsultationMessages,
+  sendConsultationMessage,
+  getCounselorConsultations,
+} from '@/features/consult/api/consultApi'
 
 const props = defineProps({
   reservationId: { type: String, required: true },
@@ -68,13 +72,32 @@ const counselor = computed(() => {
 const status = ref(reservation.value?.status === 'COMPLETED' ? 'COMPLETED' : 'IN_PROGRESS')
 const statusMeta = computed(() => CONSULTATION_STATUS_META[status.value])
 
+// COUNSELOR로 볼 때 상대(신청자) 이름은 mock counselorConsultations 대신 실제 API에서
+// 가져온다 - CounselorHomeView와 같은 API를 재사용해, 이 화면의 reservationId와 일치하는
+// 항목의 userName만 뽑아 쓴다(백엔드에 예약 1건 단건 조회 API가 없어 목록에서 찾는다).
+const realCounselorReservation = ref(null)
+
+onMounted(async () => {
+  if (currentRole !== 'COUNSELOR' || !reservationIdNumber.value) return
+  try {
+    const items = await getCounselorConsultations(CURRENT_COUNSELOR_ID)
+    realCounselorReservation.value =
+      (items ?? []).find((item) => item.reservationId === reservationIdNumber.value) ?? null
+  } catch {
+    realCounselorReservation.value = null
+  }
+})
+
 // 상단 헤더에 보여줄 상대방. currentRole이 USER면 상담사가, COUNSELOR면 이 상담을
 // 예약한 사용자가 상대다 - 이 값만 바뀌면 같은 ChatView를 두 역할이 그대로 재사용할
-// 수 있다. 상담사 홈 목록에 없는 reservationId로 들어온 경우에만 데모용 기본 프로필
-// (chatUserProfile)로 대체한다.
+// 수 있다. 실제 API 조회가 아직 안 끝났거나 실패한 경우에만 mock → 데모용 기본 프로필
+// (chatUserProfile) 순으로 대체한다.
 const opponent = computed(() => {
   if (currentRole === 'COUNSELOR') {
-    const userName = reservation.value?.userName ?? chatUserProfile.name
+    const userName =
+      realCounselorReservation.value?.userName ??
+      reservation.value?.userName ??
+      chatUserProfile.name
     return { image: chatUserProfile.image, displayName: userName }
   }
   const name = counselor.value?.name ?? '상담사'
