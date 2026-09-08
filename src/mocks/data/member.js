@@ -1,9 +1,11 @@
+import { SEED_MEMBER } from '@/mocks/data/seed'
+
 export const mockMemberProfile = {
-  id: 1,
-  nickname: '김OO',
-  incomeBracket: 'INCOME_DECILE_2_3',
-  monthlyIncome: 3000000,
-  occupationType: 'OFFICE_WORKER',
+  id: SEED_MEMBER.id,
+  nickname: SEED_MEMBER.nickname,
+  incomeBracket: SEED_MEMBER.incomeBracket,
+  monthlyIncome: SEED_MEMBER.monthlyIncome,
+  occupationType: SEED_MEMBER.occupationType,
   notificationAgreed: true,
   compareDataAgreed: false,
 }

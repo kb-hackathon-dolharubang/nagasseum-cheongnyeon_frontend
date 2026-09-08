@@ -1,3 +1,5 @@
+import { SEED_GOAL, SEED_MEMBER } from '@/mocks/data/seed'
+
 export const mockCompareGoalsSuccess = {
   success: true,
   data: {
@@ -10,10 +12,12 @@ export const mockCompareGoalsSuccess = {
       sufficient: true,
       minimumRequired: null,
     },
-    myMonthlyIncome: 3000000,
+    myMonthlyIncome: SEED_MEMBER.monthlyIncome,
     cohortAverageNetAssets: 45000000,
+    // mine은 목표 상세 화면과 같은 SEED_GOAL.progress.achievementRate(96.4)를 쓰므로,
+    // isMine 표시도 그 값이 속하는 80~100 구간에 둔다.
     achievement: {
-      mine: 60.0,
+      mine: SEED_GOAL.progress.achievementRate,
       cohortAverage: 52.0,
       buckets: [
         { rangeMin: 0, rangeMax: 10, count: 3, ratio: 1.2, isMine: false },
@@ -22,9 +26,9 @@ export const mockCompareGoalsSuccess = {
         { rangeMin: 30, rangeMax: 40, count: 34, ratio: 13.8, isMine: false },
         { rangeMin: 40, rangeMax: 50, count: 52, ratio: 21.1, isMine: false },
         { rangeMin: 50, rangeMax: 60, count: 61, ratio: 24.7, isMine: false },
-        { rangeMin: 60, rangeMax: 70, count: 38, ratio: 15.4, isMine: true },
+        { rangeMin: 60, rangeMax: 70, count: 38, ratio: 15.4, isMine: false },
         { rangeMin: 70, rangeMax: 80, count: 19, ratio: 7.7, isMine: false },
-        { rangeMin: 80, rangeMax: 100, count: 10, ratio: 4.0, isMine: false },
+        { rangeMin: 80, rangeMax: 100, count: 10, ratio: 4.0, isMine: true },
       ],
     },
     dealTypeDistribution: [

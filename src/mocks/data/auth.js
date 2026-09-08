@@ -1,3 +1,5 @@
+import { SEED_MEMBER } from '@/mocks/data/seed'
+
 export const mockKakaoSignupRequiredResponse = {
   success: true,
   data: {
@@ -6,7 +8,7 @@ export const mockKakaoSignupRequiredResponse = {
     refreshToken: null,
     memberId: null,
     kakaoId: '1234567890',
-    kakaoNickname: '김OO',
+    kakaoNickname: SEED_MEMBER.nickname,
   },
   error: null,
 }
@@ -17,7 +19,7 @@ export const mockKakaoLoginResponse = {
     status: 'LOGIN',
     accessToken: 'mock-access-token',
     refreshToken: 'mock-refresh-token',
-    memberId: 1,
+    memberId: SEED_MEMBER.id,
     kakaoId: null,
     kakaoNickname: null,
   },
@@ -29,7 +31,7 @@ export const mockKakaoSignupResponse = {
   data: {
     accessToken: 'mock-access-token',
     refreshToken: 'mock-refresh-token',
-    memberId: 1,
+    memberId: SEED_MEMBER.id,
   },
   error: null,
 }
@@ -39,7 +41,7 @@ export const mockRefreshResponse = {
   data: {
     accessToken: 'mock-access-token-refreshed',
     refreshToken: 'mock-refresh-token-refreshed',
-    memberId: 1,
+    memberId: SEED_MEMBER.id,
   },
   error: null,
 }
