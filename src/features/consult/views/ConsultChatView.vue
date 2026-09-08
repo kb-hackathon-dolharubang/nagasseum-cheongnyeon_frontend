@@ -22,6 +22,7 @@ import {
   sendConsultationMessage,
   getCounselorConsultations,
   getUserConsultations,
+  endConsultation,
 } from '@/features/consult/api/consultApi'
 
 const props = defineProps({
@@ -250,13 +251,25 @@ async function handleSend() {
 }
 
 const isEndModalOpen = ref(false)
+const isEnding = ref(false)
+const endError = ref('')
 
-function handleEndConsultation() {
-  // 실제 종료 API가 없어 화면 상태만 COMPLETED로 바꾼다(원본 myConsultations Mock은
-  // 건드리지 않는다). 종료 후에는 AI 리포트 화면으로 넘어간다.
-  status.value = 'COMPLETED'
-  isEndModalOpen.value = false
-  router.push({ name: 'consult-report', params: { reservationId: props.reservationId } })
+async function handleEndConsultation() {
+  if (isEnding.value || !reservationIdNumber.value) return
+
+  isEnding.value = true
+  endError.value = ''
+
+  try {
+    await endConsultation(reservationIdNumber.value)
+    status.value = 'COMPLETED'
+    isEndModalOpen.value = false
+    router.push({ name: 'consult-report', params: { reservationId: props.reservationId } })
+  } catch {
+    endError.value = '상담을 종료하지 못했습니다. 다시 시도해주세요.'
+  } finally {
+    isEnding.value = false
+  }
 }
 
 // 사용자는 내 상담으로, 상담사는 상담사 홈으로 - 들어온 쪽으로 그대로 돌아간다.
@@ -345,9 +358,14 @@ function goBack() {
       <p class="consult-chat-view__modal-desc">
         상담을 종료하면 채팅 내용이 상담 리포트 생성에 활용됩니다.
       </p>
+      <p v-if="endError" class="consult-chat-view__modal-error">{{ endError }}</p>
       <template #footer>
-        <BaseButton variant="secondary" @click="isEndModalOpen = false">취소</BaseButton>
-        <BaseButton variant="primary" @click="handleEndConsultation">상담 종료</BaseButton>
+        <BaseButton variant="secondary" :disabled="isEnding" @click="isEndModalOpen = false">
+          취소
+        </BaseButton>
+        <BaseButton variant="primary" :disabled="isEnding" @click="handleEndConsultation">
+          상담 종료
+        </BaseButton>
       </template>
     </BaseModal>
   </div>
@@ -522,5 +540,11 @@ function goBack() {
   font-size: 13px;
   line-height: 1.5;
   color: var(--color-text-secondary, #4b564e);
+}
+
+.consult-chat-view__modal-error {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--color-point, #c1442e);
 }
 </style>

@@ -35,3 +35,10 @@ export async function sendConsultationMessage(reservationId, payload) {
   const { data } = await httpClient.post(`/api/v1/consultations/${reservationId}/messages`, payload)
   return data.data
 }
+
+// 상담 종료. 응답 data는 { reservationId, status, endedAt } - 백엔드가 RESERVED/
+// IN_PROGRESS -> COMPLETED로 바꾸고 ended_at을 기록한다(이미 COMPLETED면 409).
+export async function endConsultation(reservationId) {
+  const { data } = await httpClient.patch(`/api/v1/consultations/${reservationId}/end`)
+  return data.data
+}
