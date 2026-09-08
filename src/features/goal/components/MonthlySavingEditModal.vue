@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 
 import BaseButton from '@/shared/components/atoms/base/button/BaseButton.vue'
-import BaseChipGroup from '@/shared/components/atoms/form/ChipGroup/BaseChipGroup.vue'
+import BaseChipGroup from '@/shared/components/atoms/form/BaseChipGroup.vue'
 import BaseInput from '@/shared/components/atoms/base/input/BaseInput.vue'
 import { formatManwon, formatYearMonthKo } from '@/shared/utils/formatter'
 

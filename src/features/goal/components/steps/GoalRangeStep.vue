@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 
-import BaseDualRangeSlider from '@/shared/components/atoms/form/RangeSlider/BaseDualRangeSlider.vue'
+import BaseDualRangeSlider from '@/shared/components/atoms/form/BaseDualRangeSlider.vue'
 
 const props = defineProps({
   modelValue: { type: Object, required: true }, // { min, max }

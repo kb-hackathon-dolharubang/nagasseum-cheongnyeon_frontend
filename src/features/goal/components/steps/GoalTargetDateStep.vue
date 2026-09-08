@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 
-import BaseYearMonthSelect from '@/shared/components/atoms/form/YearMonthSelect/BaseYearMonthSelect.vue'
+import BaseYearMonthSelect from '@/shared/components/atoms/form/BaseYearMonthSelect.vue'
 import { formatYearMonth } from '@/shared/utils/formatter'
 
 const props = defineProps({

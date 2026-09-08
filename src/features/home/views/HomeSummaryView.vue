@@ -2,7 +2,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
-import BaseSkeleton from '@/shared/components/atoms/feedback/Skeleton/BaseSkeleton.vue'
+import BaseSkeleton from '@/shared/components/atoms/feedback/BaseSkeleton.vue'
 
 import { useHomeStore } from '@/features/home/store/homeStore'
 import { useMemberStore } from '@/features/member/store/memberStore'

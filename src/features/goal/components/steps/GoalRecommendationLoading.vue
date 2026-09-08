@@ -1,7 +1,7 @@
 <script setup>
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 
-import BaseClimbingLoader from '@/shared/components/atoms/feedback/ClimbingLoader/BaseClimbingLoader.vue'
+import BaseClimbingLoader from '@/shared/components/atoms/feedback/BaseClimbingLoader.vue'
 
 // 실제 추천 계산은 4개 알고리즘이 각각 실거래를 훑어서 수 초가 걸릴 수 있다.
 // 한 문장만 띄워두면 멈춘 것처럼 보여서, 지금 무슨 일이 일어나는지 순서대로 바꿔 보여준다.

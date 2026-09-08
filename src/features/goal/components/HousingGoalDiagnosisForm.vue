@@ -1,9 +1,9 @@
 <script setup>
 import { reactive, computed } from 'vue'
 
-import BaseChipGroup from '@/shared/components/atoms/form/ChipGroup/BaseChipGroup.vue'
-import BaseDualRangeSlider from '@/shared/components/atoms/form/RangeSlider/BaseDualRangeSlider.vue'
-import BaseYearMonthSelect from '@/shared/components/atoms/form/YearMonthSelect/BaseYearMonthSelect.vue'
+import BaseChipGroup from '@/shared/components/atoms/form/BaseChipGroup.vue'
+import BaseDualRangeSlider from '@/shared/components/atoms/form/BaseDualRangeSlider.vue'
+import BaseYearMonthSelect from '@/shared/components/atoms/form/BaseYearMonthSelect.vue'
 import BaseInputField from '@/shared/components/molecules/BaseInputField.vue'
 import BaseButton from '@/shared/components/atoms/base/button/BaseButton.vue'
 import { formatEok, formatManwon } from '@/shared/utils/formatter'

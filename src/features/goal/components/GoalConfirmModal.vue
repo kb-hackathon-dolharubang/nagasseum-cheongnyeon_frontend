@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 
-import BaseModal from '@/shared/components/atoms/feedback/Modal/BaseModal.vue'
+import BaseModal from '@/shared/components/atoms/feedback/BaseModal.vue'
 import BaseButton from '@/shared/components/atoms/base/button/BaseButton.vue'
 import BaseDivider from '@/shared/components/atoms/base/divider/BaseDivider.vue'
 import { formatGoalAmount, formatYearMonth } from '@/shared/utils/formatter'

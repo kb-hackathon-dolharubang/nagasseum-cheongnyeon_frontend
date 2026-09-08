@@ -4,8 +4,8 @@ import { useRouter } from 'vue-router'
 
 import AppHeader from '@/shared/components/molecules/AppHeader.vue'
 import BaseButton from '@/shared/components/atoms/base/button/BaseButton.vue'
-import BaseSkeleton from '@/shared/components/atoms/feedback/Skeleton/BaseSkeleton.vue'
-import BaseEmptyState from '@/shared/components/atoms/feedback/EmptyState/BaseEmptyState.vue'
+import BaseSkeleton from '@/shared/components/atoms/feedback/BaseSkeleton.vue'
+import BaseEmptyState from '@/shared/components/atoms/feedback/BaseEmptyState.vue'
 
 import RecommendationCard from '@/features/goal/components/RecommendationCard.vue'
 import { useGoalStore } from '@/features/goal/store/goalStore'

@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 
-import BaseModal from '@/shared/components/atoms/feedback/Modal/BaseModal.vue'
+import BaseModal from '@/shared/components/atoms/feedback/BaseModal.vue'
 import BaseButton from '@/shared/components/atoms/base/button/BaseButton.vue'
 import { formatEok, formatManwon } from '@/shared/utils/formatter'
 
