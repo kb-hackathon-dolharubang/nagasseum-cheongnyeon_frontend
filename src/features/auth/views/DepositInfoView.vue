@@ -3,7 +3,7 @@ import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import BaseButton from '@/shared/components/atoms/base/button/BaseButton.vue'
-import BaseBreadcrumb from '@/shared/components/atoms/navigation/Breadcrumb/BaseBreadcrumb.vue'
+import BaseBreadcrumb from '@/shared/components/atoms/navigation/BaseBreadcrumb.vue'
 import BaseInputField from '@/shared/components/molecules/BaseInputField.vue'
 import AppHeader from '@/shared/components/molecules/AppHeader.vue'
 import { ONBOARDING_STEPS } from '@/shared/constants/onboardingSteps'
