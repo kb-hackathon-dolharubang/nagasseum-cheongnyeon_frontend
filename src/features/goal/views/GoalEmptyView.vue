@@ -2,7 +2,7 @@
 import { useRouter } from 'vue-router'
 
 import AppHeader from '@/shared/components/molecules/AppHeader.vue'
-import EmptyGoalCard from '@/features/home/components/EmptyGoalCard.vue'
+import EmptyGoalCard from '@/features/goal/components/EmptyGoalCard.vue'
 
 const router = useRouter()
 </script>

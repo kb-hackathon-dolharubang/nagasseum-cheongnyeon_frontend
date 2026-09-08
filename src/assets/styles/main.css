@@ -59,10 +59,17 @@ html {
 }
 
 :root {
-  --text: #9aa09a;
-  --text-h: #ffffff;
+  /*
+    BaseInputField·BaseInput·BaseBreadcrumb 등 공용 컴포넌트가 쓰는 legacy 변수.
+    시맨틱 토큰을 그대로 가리키게 해서 테마를 따라가게 한다 — 예전엔 다크로 고정돼 있어
+    화면마다(AuthLayout, GoalConditionStepsView 등) 로컬로 덮어써야 했다.
+  */
+  --text: var(--color-text-secondary);
+  --text-h: var(--color-text-primary);
+  --border: var(--color-border);
+  --card-bg: var(--color-surface);
+  /* 테마와 무관하게 항상 어두운 배경이 필요한 자리(EditInfoView 아바타 원 등) 전용. */
   --bg: #111111;
-  --border: #262626;
   --accent: #e3ffe8;
   --accent-bg: rgba(227, 255, 232, 0.1);
   --accent-border: rgba(227, 255, 232, 0.5);
@@ -149,7 +156,7 @@ html {
   letter-spacing: 0.18px;
   color-scheme: dark;
   color: var(--text);
-  background: var(--bg);
+  background: var(--color-app-bg);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;

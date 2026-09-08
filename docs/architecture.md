@@ -98,3 +98,15 @@ shared/              →  features/{domain}    금지
 - 각 도메인의 `index.js`를 통해서만 외부로 공개 (내부 구현 은닉)
 - 도메인 간 공유 로직은 반드시 `shared/`로 추출 후 사용
 - 코드를 생성·수정할 때 위 규칙을 위반하는 import(feature 간 직접 참조, `shared → features`)를 추가하지 않는다
+
+### 예외: 대시보드성 화면의 다른 도메인 상태 조회
+
+`home`(홈 대시보드)처럼 여러 도메인의 데이터를 한 화면에 모아 보여주는 화면은 다른 도메인의
+Pinia 스토어(예: `memberStore.profile`, `assetStore.isSyncing`)를 반응형으로 구독해야 하는
+경우가 있다. 이런 상태는 도메인마다 하나뿐인 싱글턴이라 `shared/`로 옮기면 오히려 `shared`가
+도메인 지식을 갖게 되어 반대 방향 규칙을 어긴다.
+
+이 경우에 한해 **다른 도메인의 `index.js`를 통한 스토어 조회**(`@/features/member` 등, 내부
+경로 `@/features/member/store/memberStore` 직접 참조는 여전히 금지)는 허용한다. 반면 REST
+호출처럼 상태가 없는 로직은 이 예외의 대상이 아니며, 여러 도메인이 같은 엔드포인트를 써야 하면
+`shared/api/`로 추출한다(`shared/api/manualAssetApi.js` 참고).

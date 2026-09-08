@@ -1,7 +1,6 @@
 import { http, HttpResponse, delay } from 'msw'
 
 import {
-  buildMockDiagnosisResult,
   buildMockRecommendations,
   buildMockRecommendationResult,
   mockGoalSaveResponse,
@@ -38,15 +37,6 @@ function toRecommendationCondition(searchParams) {
 }
 
 export const goalHandlers = [
-  http.post(`${API_BASE_URL}/api/v1/goals/diagnosis`, async ({ request }) => {
-    const payload = await request.json()
-    return HttpResponse.json({
-      success: true,
-      data: buildMockDiagnosisResult(payload),
-      error: null,
-    })
-  }),
-
   // 목표 추천 리스트 조회 (명세서대로 GET + Query Parameter).
   // 주의: 아래 `GET /goals/:goalId`가 세그먼트 하나짜리 경로를 모두 goalId로 매칭하므로,
   // `market-trend`/`summary`와 마찬가지로 반드시 그보다 먼저 등록해야 한다.

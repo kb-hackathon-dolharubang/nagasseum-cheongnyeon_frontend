@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 
-import { resolveCompareError } from '@/features/compare/composables/compareStatus'
+import { resolveCompareError } from '@/features/compare/utils/compareStatus'
 
 export function useComparisonFetcher(fetchComparison, { hasSnapshotCheck = false } = {}) {
   const status = ref('loading')

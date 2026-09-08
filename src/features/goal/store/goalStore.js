@@ -2,7 +2,6 @@ import { ref } from 'vue'
 import { defineStore } from 'pinia'
 
 import {
-  postGoalDiagnosis,
   fetchGoalRecommendations,
   fetchGoalRecommendation,
   postGoal,
@@ -14,13 +13,9 @@ import {
   fetchGoalMarketTrend,
   fetchGoalSummary,
 } from '@/features/goal/api/goalApi'
-import { toMarketAlertViewModel } from '@/features/goal/utils/marketAlertViewModel'
+import { toMarketAlertViewModel } from '@/shared/utils/marketAlertViewModel'
 
 export const useGoalStore = defineStore('goal', () => {
-  const diagnosisResult = ref(null) // 진단 결과 { budget, results }
-  const isSubmitting = ref(false)
-  const error = ref(null)
-
   // 조건 입력 플로우가 받아온 추천 대안 목록. 대안을 내지 못한 알고리즘은 응답에서 빠지므로
   // 길이가 4보다 작을 수 있고, 조건에 따라 아예 0개일 수도 있다.
   const recommendations = ref([])
@@ -81,20 +76,6 @@ export const useGoalStore = defineStore('goal', () => {
   const simulationError = ref(null)
   // 입력할 때마다 호출되므로 응답이 역순으로 도착할 수 있다. 마지막 요청 결과만 반영한다.
   let latestSimulationId = 0
-
-  async function submitDiagnosis(payload) {
-    isSubmitting.value = true
-    error.value = null
-
-    try {
-      diagnosisResult.value = await postGoalDiagnosis(payload)
-    } catch (e) {
-      // 백엔드가 {success:false, error:{code,message,fields}}로 내려주므로, 있으면 그 메시지를 그대로 쓴다.
-      error.value = e.response?.data?.error ?? e
-    } finally {
-      isSubmitting.value = false
-    }
-  }
 
   // 조건 입력을 마치고 추천 목록을 불러온다. 호출부(로딩 화면)가 성공/실패로 화면을 갈라야 해서
   // 에러를 상태에만 담지 않고 boolean으로도 돌려준다.
@@ -328,10 +309,6 @@ export const useGoalStore = defineStore('goal', () => {
   }
 
   return {
-    diagnosisResult,
-    isSubmitting,
-    error,
-    submitDiagnosis,
     recommendations,
     isRecommending,
     recommendError,

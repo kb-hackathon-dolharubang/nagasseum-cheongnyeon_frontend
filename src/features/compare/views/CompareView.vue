@@ -6,7 +6,7 @@ import { formatEokManwon, formatManwon } from '@/shared/utils/formatter'
 import AppHeader from '@/shared/components/molecules/AppHeader.vue'
 
 import { FLOW_CONTEXT, useAssetStore } from '@/features/asset'
-import { useMemberStore } from '@/features/member/store/memberStore'
+import { useMemberStore } from '@/features/member'
 
 import { useAssetComparison } from '@/features/compare/composables/useAssetComparison'
 import {

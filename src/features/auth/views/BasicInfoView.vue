@@ -14,7 +14,7 @@ import { INCOME_BRACKET_OPTIONS } from '@/shared/constants/incomeBracket'
 import { OCCUPATION_OPTIONS } from '@/shared/constants/occupation'
 
 import { useAuthStore } from '@/features/auth/store/authStore'
-import { updateMyInfo } from '@/features/member/api/memberApi'
+import { updateSignupProfile } from '@/features/auth/api/authApi'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -57,7 +57,7 @@ async function saveOptionalProfile() {
   await nextTick()
 
   try {
-    await updateMyInfo({
+    await updateSignupProfile({
       monthlyIncome: monthlyIncome.value,
       occupationType: occupationType.value,
     })

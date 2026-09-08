@@ -1,7 +1,8 @@
 import httpClient from '@/shared/api/httpClient'
 import { createManualAsset } from '@/shared/api/manualAssetApi'
+import { getAssetSummary } from '@/shared/api/assetSummaryApi'
 
-export { createManualAsset }
+export { createManualAsset, getAssetSummary }
 
 export async function getAssetOrganizations() {
   const { data } = await httpClient.get('/api/v1/assets/organizations')
@@ -24,12 +25,6 @@ export async function syncAssets() {
 // 자산 동기화 상태 조회: syncAssets가 반환한 jobId로 백그라운드 동기화 진행 상태를 조회
 export async function getAssetSyncStatus(jobId) {
   const { data } = await httpClient.get(`/api/v1/assets/sync/status/${jobId}`)
-  return data.data
-}
-
-// 자산 요약 조회: 총자산·총부채·순자산과 현금성/투자 자산 구성을 최신 동기화 값 기준으로 한 번에 조회
-export async function getAssetSummary() {
-  const { data } = await httpClient.get('/api/v1/assets/summary')
   return data.data
 }
 
