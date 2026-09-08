@@ -120,15 +120,25 @@ async function handleConfirm() {
   // isSubmitting은 응답을 기다리는 동안 버튼을 다시 눌러 중복 예약이 생기지 않게 막는다.
   if (!canConfirm.value || isSubmitting.value) return
 
+  // userId는 하드코딩하지 않고 authStore.currentMemberId에서 가져온다 - 실제 로그인
+  // memberId가 최우선이고, 로컬에서 VITE_SKIP_AUTH_GUARD로 로그인을 건너뛴 경우에만
+  // authStore가 VITE_DEV_MEMBER_ID로 대신 채워준다(둘 다 없으면 null). 여기서도 둘 다
+  // 없으면 API를 아예 호출하지 않는다 - userId:null로 서버에 보내지 않는다.
+  const memberId = authStore.currentMemberId
+  if (!memberId) {
+    console.error(
+      '[상담 예약] 현재 사용자 ID를 확인할 수 없습니다. 로그인 상태 또는 VITE_DEV_MEMBER_ID(.env.local)를 확인해주세요.',
+    )
+    submitError.value = '예약 중 문제가 발생했습니다. 다시 시도해주세요.'
+    return
+  }
+
   isSubmitting.value = true
   submitError.value = ''
 
   try {
     const requestPayload = {
-      // userId는 하드코딩하지 않고 기존 로그인 사용자 store(authStore.user.id)에서
-      // 그대로 가져온다. 이 API만 예외적으로 memberId를 body에 명시해서 보내는
-      // 임시 MVP 구조라, 다른 API(goalApi 등)처럼 서버가 토큰에서 추출하지 않는다.
-      userId: authStore.user?.id ?? null,
+      userId: memberId,
       counselorId: Number(props.counselorId),
       consultationType,
       // UI/다른 화면은 항상 프론트 내부 코드(GOAL_SETTING 등)를 쓰고, 서버로 보낼 때만
