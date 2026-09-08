@@ -29,3 +29,10 @@ export const CATEGORY_API_VALUES = {
   LOAN: 'LOAN',
   ASSET_MANAGEMENT: 'ASSET',
 }
+
+// 위 매핑의 반대 방향(백엔드 값 -> 프론트 내부 코드). 내 상담 목록 조회처럼 API 응답의
+// category를 화면에 표시할 때(getCategorySubjectLabel 등) 쓴다. CATEGORY_API_VALUES를
+// 뒤집어서 만들어 두 매핑이 항상 같은 짝을 유지하게 한다.
+export const CATEGORY_FROM_API_VALUES = Object.fromEntries(
+  Object.entries(CATEGORY_API_VALUES).map(([internalValue, apiValue]) => [apiValue, internalValue]),
+)
