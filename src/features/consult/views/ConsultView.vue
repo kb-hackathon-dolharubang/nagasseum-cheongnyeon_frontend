@@ -9,6 +9,7 @@ import BaseBadge from '@/shared/components/atoms/base/badge/BaseBadge.vue'
 import BaseChipGroup from '@/shared/components/atoms/form/ChipGroup/BaseChipGroup.vue'
 import CounselorCard from '@/features/consult/components/CounselorCard.vue'
 import { recentDiagnosisGoal, myConsultation, counselors } from '@/features/consult/data/counselors'
+import { CATEGORY_OPTIONS as CONSULT_CATEGORY_OPTIONS } from '@/features/consult/constants/categories'
 
 const router = useRouter()
 
@@ -27,14 +28,7 @@ const myConsultationDateTimeLabel = computed(() => {
   return `${date.getMonth() + 1}월 ${date.getDate()}일 ${myConsultation.time}`
 })
 
-const CATEGORY_OPTIONS = [
-  { label: '전체', value: 'ALL' },
-  { label: '목표 설정', value: 'GOAL_SETTING' },
-  { label: '저축', value: 'SAVING' },
-  { label: '주거', value: 'HOUSING' },
-  { label: '대출', value: 'LOAN' },
-  { label: '자산 관리', value: 'ASSET_MANAGEMENT' },
-]
+const CATEGORY_OPTIONS = [{ label: '전체', value: 'ALL' }, ...CONSULT_CATEGORY_OPTIONS]
 
 // 상담사 목록 필터 조건으로 그대로 쓰인다.
 const selectedCategory = ref('ALL')
@@ -81,8 +75,7 @@ function handleViewCounselors() {
 }
 
 function handleViewMyConsultations() {
-  // /consult/my 라우트가 아직 없어 클릭 지점만 마련해둔다. 라우트가 생기면
-  // router.push({ name: 'consult-my' })로 교체한다.
+  router.push({ name: 'consult-my' })
 }
 </script>
 

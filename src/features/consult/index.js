@@ -3,3 +3,5 @@ export { default as ConsultReservationView } from '@/features/consult/views/Cons
 export { default as ConsultReservationInfoView } from '@/features/consult/views/ConsultReservationInfoView.vue'
 export { default as ConsultReservationCompleteView } from '@/features/consult/views/ConsultReservationCompleteView.vue'
 export { default as ConsultMyView } from '@/features/consult/views/ConsultMyView.vue'
+export { default as ConsultChatView } from '@/features/consult/views/ConsultChatView.vue'
+export { default as ConsultReportView } from '@/features/consult/views/ConsultReportView.vue'

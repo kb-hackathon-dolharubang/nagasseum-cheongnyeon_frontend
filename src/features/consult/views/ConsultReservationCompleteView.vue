@@ -9,6 +9,7 @@ import BaseBadge from '@/shared/components/atoms/base/badge/BaseBadge.vue'
 import ReservationStepIndicator from '@/features/consult/components/ReservationStepIndicator.vue'
 import { formatMonthDayWeekdayKo } from '@/shared/utils/formatter'
 import { counselors } from '@/features/consult/data/counselors'
+import { getCategorySubjectLabel } from '@/features/consult/constants/categories'
 
 // 상담 정보 화면(2단계)이 예약 확정 시 router state로 넘겨준 값을 그대로 읽는다
 // ({ reservationId, counselorId, category, reservationDate, reservationTime, ... }).
@@ -21,20 +22,7 @@ const counselor = computed(
   () => counselors.find((item) => item.id === Number(reservation.counselorId)) ?? null,
 )
 
-// 상담 홈/예약 화면들과 같은 category 코드·라벨을 쓴다. 내부 GENERAL/GOAL_DIAGNOSIS
-// 값은 어디에도 노출하지 않는다.
-const CATEGORY_LABELS = {
-  GOAL_SETTING: '목표 설정',
-  SAVING: '저축',
-  HOUSING: '주거',
-  LOAN: '대출',
-  ASSET_MANAGEMENT: '자산 관리',
-}
-
-const subjectLabel = computed(() => {
-  const label = CATEGORY_LABELS[reservation.category]
-  return label ? `${label} 상담` : '상담'
-})
+const subjectLabel = computed(() => getCategorySubjectLabel(reservation.category))
 
 // "2026-09-09" + "14:00" -> "9월 9일 수요일 · 14:00"
 const scheduleLabel = computed(() => {

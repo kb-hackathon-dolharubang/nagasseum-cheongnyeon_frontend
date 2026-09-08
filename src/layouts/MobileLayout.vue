@@ -36,12 +36,15 @@ const HIDDEN_NAV_ROUTE_NAMES = [
   'edit-info',
   'asset-link-additional',
   'asset-detail',
-  // 예약 흐름(일정 선택 → 상담 정보 → 예약 완료)과 내 상담은 상담 탭에서 벗어난
-  // 하위 화면이라, 다른 상세 화면들과 같이 하단 탭을 숨긴다.
+  // 예약 흐름(일정 선택 → 상담 정보 → 예약 완료)과 내 상담, 그리고 내 상담에서
+  // 이어지는 채팅/리포트는 상담 탭에서 벗어난 하위 화면이라, 다른 상세 화면들과
+  // 같이 하단 탭을 숨긴다.
   'consult-reservation',
   'consult-reservation-info',
   'consult-my',
   'consult-reservation-complete',
+  'consult-chat',
+  'consult-report',
 ]
 
 const activeIndex = computed(() =>

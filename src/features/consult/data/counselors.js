@@ -101,6 +101,37 @@ export const myConsultation = {
   time: '14:00',
 }
 
+// 내 상담(/consult/my) 목록 Mock. 상담사 정보는 중복 저장하지 않고 counselorId로만
+// counselors를 조회해서 쓴다. status는 RESERVED(예약 완료) / IN_PROGRESS(상담 중) /
+// COMPLETED(상담 완료) 3개만 쓴다 - 승인 대기·거절·노쇼 같은 상태는 우리 서비스의
+// "시간 선택 = 바로 확정" 정책상 없다.
+export const myConsultations = [
+  {
+    reservationId: 1,
+    counselorId: 1,
+    category: 'HOUSING',
+    reservationDate: '2026-09-09',
+    reservationTime: '14:00',
+    status: 'RESERVED',
+  },
+  {
+    reservationId: 2,
+    counselorId: 2,
+    category: 'SAVING',
+    reservationDate: '2026-09-06',
+    reservationTime: '16:00',
+    status: 'IN_PROGRESS',
+  },
+  {
+    reservationId: 3,
+    counselorId: 3,
+    category: 'ASSET_MANAGEMENT',
+    reservationDate: '2026-09-05',
+    reservationTime: '13:00',
+    status: 'COMPLETED',
+  },
+]
+
 // 상담사별 예약 가능 일정. 실제 스케줄 API가 생기면 counselorId로 조회하도록 바꾸면 된다.
 // key는 counselors[].id. 날짜가 이 목록에 없으면(과거/당일 포함) 예약 화면 캘린더에서
 // 선택할 수 없는 날짜로 취급한다.

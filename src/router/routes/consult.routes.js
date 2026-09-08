@@ -4,6 +4,8 @@ import {
   ConsultReservationInfoView,
   ConsultReservationCompleteView,
   ConsultMyView,
+  ConsultChatView,
+  ConsultReportView,
 } from '@/features/consult'
 
 export const consultRoutes = [
@@ -26,6 +28,20 @@ export const consultRoutes = [
     path: 'consult/reservation/:counselorId/info',
     name: 'consult-reservation-info',
     component: ConsultReservationInfoView,
+    props: true,
+  },
+  // 채팅/리포트 화면 자체는 이번 범위 밖이라 placeholder만 연결한다. 내 상담 카드의
+  // CTA가 실제로 이동할 수 있어야 해서 라우트는 미리 만들어둔다.
+  {
+    path: 'consult/chat/:reservationId',
+    name: 'consult-chat',
+    component: ConsultChatView,
+    props: true,
+  },
+  {
+    path: 'consult/report/:reservationId',
+    name: 'consult-report',
+    component: ConsultReportView,
     props: true,
   },
 ]

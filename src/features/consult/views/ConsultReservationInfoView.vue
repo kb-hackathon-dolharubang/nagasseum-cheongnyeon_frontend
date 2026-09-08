@@ -14,6 +14,7 @@ import {
   recentDiagnosisGoal,
   generalConsultInfo,
 } from '@/features/consult/data/counselors'
+import { CATEGORY_OPTIONS, CATEGORY_LABELS } from '@/features/consult/constants/categories'
 
 const props = defineProps({
   counselorId: { type: String, required: true },
@@ -46,17 +47,6 @@ const scheduleLabel = computed(() => {
 /* ── 상담 분야 ─────────────────────────────────────────────────
    consultationType(어떤 방식으로 들어왔는지)과 category(실제 상담하고 싶은 분야)는
    서로 다른 값이라 따로 관리한다 - GOAL_DIAGNOSIS로 들어와도 분야는 바꿀 수 있다. */
-
-const CATEGORY_OPTIONS = [
-  { label: '목표 설정', value: 'GOAL_SETTING' },
-  { label: '저축', value: 'SAVING' },
-  { label: '주거', value: 'HOUSING' },
-  { label: '대출', value: 'LOAN' },
-  { label: '자산 관리', value: 'ASSET_MANAGEMENT' },
-]
-const CATEGORY_LABELS = Object.fromEntries(
-  CATEGORY_OPTIONS.map((option) => [option.value, option.label]),
-)
 
 const selectedCategory = ref(reservationState.category ?? null)
 
