@@ -53,7 +53,10 @@ const filteredCounselors = computed(() => {
 })
 
 function goToReservation(counselorId) {
-  router.push({ name: 'consult-reservation', params: { counselorId } })
+  // '전체'는 특정 분야를 고른 것이 아니라 null로 넘긴다. 예약 화면들은 이 값을 그대로
+  // 받아 상담 정보 단계까지 이어서 전달하기만 한다(router state라 URL에는 남지 않는다).
+  const category = selectedCategory.value === 'ALL' ? null : selectedCategoryLabel.value
+  router.push({ name: 'consult-reservation', params: { counselorId }, state: { category } })
 }
 
 function handleViewCounselors() {

@@ -56,3 +56,64 @@ export const myConsultation = {
   date: '2026-09-09',
   time: '14:00',
 }
+
+// 상담사별 예약 가능 일정. 실제 스케줄 API가 생기면 counselorId로 조회하도록 바꾸면 된다.
+// key는 counselors[].id. 날짜가 이 목록에 없으면(과거/당일 포함) 예약 화면 캘린더에서
+// 선택할 수 없는 날짜로 취급한다.
+export const availableReservationSlots = {
+  1: [
+    {
+      date: '2026-09-09',
+      slots: [
+        { time: '10:00', available: true },
+        { time: '11:00', available: false },
+        { time: '13:00', available: true },
+        { time: '14:00', available: true },
+        { time: '15:00', available: true },
+        { time: '16:00', available: false },
+      ],
+    },
+    {
+      date: '2026-09-10',
+      slots: [
+        { time: '10:00', available: true },
+        { time: '13:00', available: true },
+        { time: '15:00', available: false },
+      ],
+    },
+    {
+      date: '2026-09-14',
+      slots: [
+        { time: '11:00', available: true },
+        { time: '16:00', available: true },
+      ],
+    },
+  ],
+  2: [
+    {
+      date: '2026-09-09',
+      slots: [
+        { time: '09:00', available: true },
+        { time: '10:00', available: false },
+        { time: '16:00', available: true },
+      ],
+    },
+    {
+      date: '2026-09-11',
+      slots: [
+        { time: '10:00', available: true },
+        { time: '11:00', available: true },
+        { time: '14:00', available: false },
+      ],
+    },
+  ],
+  3: [
+    {
+      date: '2026-09-10',
+      slots: [
+        { time: '10:00', available: true },
+        { time: '13:00', available: true },
+      ],
+    },
+  ],
+}

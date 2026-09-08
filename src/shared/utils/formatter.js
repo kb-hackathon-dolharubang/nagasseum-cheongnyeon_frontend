@@ -37,6 +37,15 @@ export function formatYearMonthDot(date) {
   return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}`
 }
 
+// "2026-09-09" -> "9월 9일 수요일" (상담 예약처럼 요일까지 보여줘야 하는 특정 날짜 표기용)
+export function formatMonthDayWeekdayKo(date) {
+  return new Intl.DateTimeFormat('ko-KR', {
+    month: 'long',
+    day: 'numeric',
+    weekday: 'long',
+  }).format(new Date(date))
+}
+
 // "2026-08-02T21:40:00+09:00" -> "2026.08.02 21:40" (자산 갱신 시각처럼 날짜+시각을 같이 보여줄 때 사용)
 export function formatDateTimeDot(date) {
   const d = new Date(date)
