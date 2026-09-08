@@ -8,24 +8,37 @@ import BaseButton from '@/shared/components/atoms/base/button/BaseButton.vue'
 import BaseBadge from '@/shared/components/atoms/base/badge/BaseBadge.vue'
 import BaseChipGroup from '@/shared/components/atoms/form/ChipGroup/BaseChipGroup.vue'
 import CounselorCard from '@/features/consult/components/CounselorCard.vue'
-import { recentDiagnosisGoal, myConsultation, counselors } from '@/features/consult/data/counselors'
+import {
+  recentDiagnosisGoal,
+  myConsultation,
+  counselors,
+  HAS_RECENT_DIAGNOSIS,
+  HAS_MY_CONSULTATION,
+} from '@/features/consult/data/counselors'
 import { CATEGORY_OPTIONS as CONSULT_CATEGORY_OPTIONS } from '@/features/consult/constants/categories'
 
 const router = useRouter()
+
+// 원본 Mock은 다른 화면들도 참조하고 있어 그대로 두고, 상담 홈만 플래그로
+// "있는 것으로 볼지"를 가른다 - false면 null과 같은 취급이라 아래 템플릿이
+// Empty State 쪽으로 자연스럽게 갈라진다.
+const diagnosisGoal = computed(() => (HAS_RECENT_DIAGNOSIS ? recentDiagnosisGoal : null))
+const myConsultationData = computed(() => (HAS_MY_CONSULTATION ? myConsultation : null))
 
 const MY_CONSULTATION_STATUS_LABELS = {
   RESERVED: '예정된 상담',
 }
 
 const statusLabel = computed(
-  () => MY_CONSULTATION_STATUS_LABELS[myConsultation.status] ?? '예정된 상담',
+  () => MY_CONSULTATION_STATUS_LABELS[myConsultationData.value?.status] ?? '예정된 상담',
 )
 
 // "2026-09-09" + "14:00" -> "9월 9일 14:00". 목데이터가 날짜/시간을 따로 들고 있어 화면
 // 표시 시점에만 합친다.
 const myConsultationDateTimeLabel = computed(() => {
-  const date = new Date(myConsultation.date)
-  return `${date.getMonth() + 1}월 ${date.getDate()}일 ${myConsultation.time}`
+  if (!myConsultationData.value) return ''
+  const date = new Date(myConsultationData.value.date)
+  return `${date.getMonth() + 1}월 ${date.getDate()}일 ${myConsultationData.value.time}`
 })
 
 const CATEGORY_OPTIONS = [{ label: '전체', value: 'ALL' }, ...CONSULT_CATEGORY_OPTIONS]
@@ -77,6 +90,19 @@ function handleViewCounselors() {
 function handleViewMyConsultations() {
   router.push({ name: 'consult-my' })
 }
+
+// 목표 진단 시작 화면. 새 화면을 만들지 않고 기존 라우트를 그대로 쓴다 - 홈/목표
+// 빈 화면도 같은 이름('diagnosis')으로 이동한다.
+function goToDiagnosis() {
+  router.push({ name: 'diagnosis' })
+}
+
+// 예약된 상담이 없을 때 '상담사 보기'를 누르면 새 페이지 대신 같은 화면 아래
+// 상담사 목록 영역으로 부드럽게 스크롤한다.
+const counselorSectionRef = ref(null)
+function scrollToCounselors() {
+  counselorSectionRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
 </script>
 
 <template>
@@ -84,40 +110,73 @@ function handleViewMyConsultations() {
     <AppHeader title="상담" :show-back="false" />
 
     <BaseCard class="consult-view__goal-card">
-      <p class="consult-view__goal-heading">최근 진단한 목표가 있어요</p>
-      <p class="consult-view__goal-summary">
-        {{ recentDiagnosisGoal.region }} · {{ recentDiagnosisGoal.transactionType }}
-      </p>
-      <p class="consult-view__goal-date">목표 시점 {{ recentDiagnosisGoal.targetDate }}</p>
-      <p class="consult-view__goal-desc">전문가와 함께 진단 결과를 검토해보세요.</p>
-      <BaseButton
-        class="consult-view__goal-cta"
-        variant="primary"
-        size="lg"
-        @click="handleViewCounselors"
-      >
-        상담사 보기
-      </BaseButton>
+      <template v-if="diagnosisGoal">
+        <p class="consult-view__goal-heading">최근 진단한 목표가 있어요</p>
+        <p class="consult-view__goal-summary">
+          {{ diagnosisGoal.region }} · {{ diagnosisGoal.transactionType }}
+        </p>
+        <p class="consult-view__goal-date">목표 시점 {{ diagnosisGoal.targetDate }}</p>
+        <p class="consult-view__goal-desc">전문가와 함께 진단 결과를 검토해보세요.</p>
+        <BaseButton
+          class="consult-view__goal-cta"
+          variant="primary"
+          size="lg"
+          @click="handleViewCounselors"
+        >
+          상담사 보기
+        </BaseButton>
+      </template>
+      <template v-else>
+        <p class="consult-view__goal-heading">아직 진단한 목표가 없어요</p>
+        <p class="consult-view__goal-desc">
+          희망 주거 조건과 자산 정보를 바탕으로 목표를 먼저 진단해볼 수 있어요.
+        </p>
+        <BaseButton
+          class="consult-view__goal-cta"
+          variant="primary"
+          size="lg"
+          @click="goToDiagnosis"
+        >
+          목표 진단하기
+        </BaseButton>
+      </template>
     </BaseCard>
 
     <section class="consult-view__section">
       <h2 class="consult-view__section-title">내 상담</h2>
       <BaseCard class="consult-view__my-consult-card">
-        <BaseBadge variant="mint">{{ statusLabel }}</BaseBadge>
-        <p class="consult-view__my-consult-counselor">{{ myConsultation.counselorName }} 상담사</p>
-        <p class="consult-view__my-consult-category">{{ myConsultation.category }}</p>
-        <p class="consult-view__my-consult-datetime">{{ myConsultationDateTimeLabel }}</p>
-        <BaseButton
-          class="consult-view__my-consult-cta"
-          variant="text"
-          @click="handleViewMyConsultations"
-        >
-          내 상담 보기 ›
-        </BaseButton>
+        <template v-if="myConsultationData">
+          <BaseBadge variant="mint">{{ statusLabel }}</BaseBadge>
+          <p class="consult-view__my-consult-counselor">
+            {{ myConsultationData.counselorName }} 상담사
+          </p>
+          <p class="consult-view__my-consult-category">{{ myConsultationData.category }}</p>
+          <p class="consult-view__my-consult-datetime">{{ myConsultationDateTimeLabel }}</p>
+          <BaseButton
+            class="consult-view__my-consult-cta"
+            variant="text"
+            @click="handleViewMyConsultations"
+          >
+            내 상담 보기 ›
+          </BaseButton>
+        </template>
+        <template v-else>
+          <p class="consult-view__my-consult-empty-title">예정된 상담이 없어요</p>
+          <p class="consult-view__my-consult-empty-desc">
+            아래에서 원하는 상담 분야와 상담사를 선택해 상담을 예약해보세요.
+          </p>
+          <BaseButton
+            class="consult-view__my-consult-cta"
+            variant="text"
+            @click="scrollToCounselors"
+          >
+            상담사 보기 ›
+          </BaseButton>
+        </template>
       </BaseCard>
     </section>
 
-    <section class="consult-view__section">
+    <section ref="counselorSectionRef" class="consult-view__section">
       <h2 class="consult-view__section-title">어떤 상담이 필요하신가요?</h2>
       <BaseChipGroup
         :model-value="selectedCategory"
@@ -252,6 +311,21 @@ function handleViewMyConsultations() {
 .consult-view__my-consult-cta {
   align-self: flex-end;
   margin-top: 6px;
+}
+
+/* 예약된 상담이 없을 때. 뱃지/시간 정보 없이 제목+설명 2줄 정도로 간결하게 두어
+   아래 상담 분야·상담사 목록이 과도하게 밀려나지 않게 한다. */
+.consult-view__my-consult-empty-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text-primary, #ffffff);
+}
+
+.consult-view__my-consult-empty-desc {
+  margin: 4px 0 0;
+  font-size: 12.5px;
+  color: var(--color-text-secondary, #9aa09a);
 }
 
 /* ── 상담사 카드 목록 ──────────────────────────────────────── */
