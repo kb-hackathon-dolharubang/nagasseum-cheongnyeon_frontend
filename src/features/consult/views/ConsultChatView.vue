@@ -144,13 +144,20 @@ function toDateKey(createdAt) {
 
 // 실제 메시지가 하나도 없을 때, 상담사가 미리 인사를 건넨 것처럼 화면에만 보여주는
 // 가짜 첫 메시지다 - DB에 저장하지 않으므로 목록/폴링에도 안 잡히고, 첫 메시지 전송 시
-// RESERVED -> IN_PROGRESS로 바뀌는 백엔드 규칙에도 영향을 주지 않는다.
-const introMessage = computed(() => ({
-  messageId: 'intro',
-  senderType: 'COUNSELOR',
-  content: `안녕하세요! ${counselor.value?.name ?? '상담사'} 상담사입니다. 편하게 말씀해주세요.`,
-  createdAt: `${reservation.value?.reservationDate ?? new Date().toISOString().slice(0, 10)}T00:00:00`,
-}))
+// RESERVED -> IN_PROGRESS로 바뀌는 백엔드 규칙에도 영향을 주지 않는다. 시각은 지금
+// 시각이 아니라 "원래 상담 시작하기로 한 시간"(예약 날짜/시간)에 맞춘다 - 실제 API로
+// 조회된 값(realCounselorReservation)이 있으면 그걸, 없으면 mock reservation을 쓴다.
+const introMessage = computed(() => {
+  const info = realCounselorReservation.value ?? reservation.value
+  const date = info?.reservationDate ?? new Date().toISOString().slice(0, 10)
+  const time = info?.reservationTime ?? '00:00:00'
+  return {
+    messageId: 'intro',
+    senderType: 'COUNSELOR',
+    content: `안녕하세요! ${counselor.value?.name ?? '상담사'} 상담사입니다. 편하게 말씀해주세요.`,
+    createdAt: `${date}T${time}`,
+  }
+})
 
 // 인사말은 실제 메시지가 없을 때만이 아니라, 실제 메시지가 생긴 뒤에도 대화의 첫
 // 마디로 계속 남아있어야 한다(안 그러면 메시지를 보내는 순간 인사말이 사라져 마치
