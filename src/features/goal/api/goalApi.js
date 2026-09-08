@@ -1,35 +1,4 @@
 import httpClient from '@/shared/api/httpClient'
-import { findRegionBySigunguCode } from '@/shared/constants/regions'
-
-// 폼 내부 payload(regions 코드 배열, areaMin/Max, monthlySaving)를 백엔드 진단 API가 기대하는
-// DTO(region 이름 객체, sizeMin/Max, monthlySavings)로 변환한다.
-// housingType/dealType은 폼에서부터 이미 propertyType/tradeType enum 값으로 들어오므로 그대로 넘긴다.
-function toDiagnosisRequest(payload) {
-  const region = payload.region ? findRegionBySigunguCode(payload.region) : null
-
-  return {
-    region: region ? { sido: region.sidoName, sigungu: region.sigunguName } : null,
-    propertyType: payload.housingType,
-    tradeType: payload.dealType,
-    sizeMin: payload.areaMin,
-    sizeMax: payload.areaMax,
-    depositMin: payload.depositMin,
-    depositMax: payload.depositMax,
-    monthlyRentMin: payload.monthlyRentMin,
-    monthlyRentMax: payload.monthlyRentMax,
-    monthlySavings: payload.monthlySaving,
-    targetDate: payload.targetDate,
-  }
-}
-
-// 희망 주거 조건 입력 -> 자산 기반 총예산 계산 -> 시세 위치/예산 부족 여부/조정 제안 반환
-// 이 엔드포인트는 CLAUDE.md가 명시한 {success,data,error} 래퍼를 그대로 따르므로 여기서 언래핑한다.
-// (다른 goal API의 언래핑 미구현 이슈와는 별개로, 이 응답 계약에 한해 대응)
-// memberId는 인증 토큰(@LoginMember)에서 추출하므로 별도 전달 불필요
-export async function postGoalDiagnosis(payload) {
-  const { data } = await httpClient.post('/api/v1/goals/diagnosis', toDiagnosisRequest(payload))
-  return data.data
-}
 
 // 값을 지정하지 않은 조건(null)은 쿼리 문자열에서 아예 뺀다.
 // axios도 null/undefined 파라미터는 직렬화하지 않지만, "조건 없음 = 파라미터 없음"이라는 계약을
@@ -113,8 +82,7 @@ export async function deleteGoal(goalId) {
   return data.data
 }
 
-// 진단 결과 팝업에서 "이 목표로 설정" 선택 시 목표를 저장한다.
-// payload는 호출부(DiagnosisView.vue)에서 진단 응답 필드로 이미 백엔드 DTO 모양으로 만들어서 넘긴다.
+// 추천 상세 화면에서 "이 계획으로 목표 설정하기" 선택 시 목표를 저장한다.
 // memberId는 인증 토큰(@LoginMember)에서 추출하므로 별도 전달 불필요
 export async function postGoal(payload) {
   const { data } = await httpClient.post('/api/v1/goals', payload)
