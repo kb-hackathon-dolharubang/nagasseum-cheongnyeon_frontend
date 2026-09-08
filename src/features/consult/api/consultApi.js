@@ -15,6 +15,13 @@ export async function getUserConsultations(userId) {
   return data.data
 }
 
+// 상담사 홈(/counselor) 목록 조회. 응답 data는 예약 배열이고, 신청자 이름(userName)은
+// 백엔드가 member를 조인해서 이미 채워 내려준다 - 사용자 쪽과 달리 화면에서 별도 join 불필요.
+export async function getCounselorConsultations(counselorId) {
+  const { data } = await httpClient.get(`/api/v1/consultations/counselors/${counselorId}`)
+  return data.data
+}
+
 // 채팅 화면(/consult/chat/:reservationId) 메시지 조회. 응답 data는 createdAt 오름차순
 // 메시지 배열이다. 최초 진입 시 한 번, 이후 polling으로 반복 호출된다.
 export async function getConsultationMessages(reservationId) {
@@ -26,5 +33,12 @@ export async function getConsultationMessages(reservationId) {
 // (messageId 포함)를 그대로 돌려준다 - 화면에서 임시 id를 만들지 않고 이 응답을 쓴다.
 export async function sendConsultationMessage(reservationId, payload) {
   const { data } = await httpClient.post(`/api/v1/consultations/${reservationId}/messages`, payload)
+  return data.data
+}
+
+// 상담 종료. 응답 data는 { reservationId, status, endedAt } - 백엔드가 RESERVED/
+// IN_PROGRESS -> COMPLETED로 바꾸고 ended_at을 기록한다(이미 COMPLETED면 409).
+export async function endConsultation(reservationId) {
+  const { data } = await httpClient.patch(`/api/v1/consultations/${reservationId}/end`)
   return data.data
 }

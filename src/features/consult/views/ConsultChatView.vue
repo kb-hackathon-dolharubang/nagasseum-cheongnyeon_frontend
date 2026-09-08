@@ -15,14 +15,22 @@ import {
   chatUserProfile,
 } from '@/features/consult/data/counselors'
 import { CONSULTATION_STATUS_META } from '@/features/consult/constants/status'
-import { CURRENT_ROLE } from '@/features/consult/constants/role'
-import { getConsultationMessages, sendConsultationMessage } from '@/features/consult/api/consultApi'
+import { CURRENT_ROLE, CURRENT_COUNSELOR_ID } from '@/features/consult/constants/role'
+import { useAuthStore } from '@/features/auth'
+import {
+  getConsultationMessages,
+  sendConsultationMessage,
+  getCounselorConsultations,
+  getUserConsultations,
+  endConsultation,
+} from '@/features/consult/api/consultApi'
 
 const props = defineProps({
   reservationId: { type: String, required: true },
 })
 
 const router = useRouter()
+const authStore = useAuthStore()
 
 // route param을 한 번만 검증해서 이후 API 호출들이 전부 이 값을 쓴다 - 잘못된
 // reservationId(숫자가 아니거나 0 이하)면 null로 두고 GET/POST/polling을 아예 시작하지
@@ -40,34 +48,74 @@ const reservationIdNumber = computed(() => {
 const currentRole = window.history.state?.viewerRole === 'COUNSELOR' ? 'COUNSELOR' : CURRENT_ROLE
 
 // USER는 자신의 예약 목록(myConsultations)에서, COUNSELOR는 상담사 홈 목록
-// (counselorConsultations)에서 같은 reservationId를 찾는다 - 두 목록에 겹치는
-// reservationId(예: 2)는 같은 상담을 가리키므로 채팅 내용도 자연히 같이 이어진다.
-// (이 조회는 상대방 이름/상담 상태 표시용으로만 쓰이는 기존 로직이라 이번 작업(메시지
-// API 연동) 범위 밖이라 그대로 둔다.)
+// (counselorConsultations)에서 같은 reservationId를 찾는다 - mock 범위 밖(실제
+// 백엔드로 생성된) reservationId면 못 찾아 null이 되므로, 아래 realReservation(실제
+// API 조회 결과)을 항상 우선으로 두고 이건 그 값이 아직 없을 때의 fallback으로만 쓴다.
 const reservation = computed(() => {
   if (!reservationIdNumber.value) return null
   const source = currentRole === 'COUNSELOR' ? counselorConsultations : myConsultations
   return source.find((item) => item.reservationId === reservationIdNumber.value) ?? null
 })
-const counselor = computed(() =>
-  reservation.value
-    ? (counselors.find((item) => item.id === reservation.value.counselorId) ?? null)
-    : null,
-)
+
+// 이 예약의 실제 백엔드 데이터. 단건 조회 API가 없어 목록 API(역할별로 다른 엔드포인트)를
+// 불러 reservationId로 찾는다 - counselorId/status/reservationDate·Time 등 mock에
+// 기대면 안 되는 값들의 유일한 진짜 출처다.
+const realReservation = ref(null)
+
+onMounted(async () => {
+  if (!reservationIdNumber.value) return
+  try {
+    if (currentRole === 'COUNSELOR') {
+      const items = await getCounselorConsultations(CURRENT_COUNSELOR_ID)
+      realReservation.value =
+        (items ?? []).find((item) => item.reservationId === reservationIdNumber.value) ?? null
+    } else {
+      const memberId = authStore.currentMemberId
+      if (!memberId) return
+      const items = await getUserConsultations(memberId)
+      realReservation.value =
+        (items ?? []).find((item) => item.reservationId === reservationIdNumber.value) ?? null
+    }
+  } catch {
+    realReservation.value = null
+  }
+
+  // 채팅방에 들어온 순간은 진행 중으로 본다는 기존 정책은 유지하되(RESERVED로
+  // 들어와도 IN_PROGRESS로 취급), 이미 COMPLETED인지만은 실제 상태를 따른다. 초기값이
+  // mock 기준이라 잘못된 값(예: mock엔 COMPLETED인데 실제는 아닌 경우)일 수 있어,
+  // COMPLETED로 "바꾸는" 조건만이 아니라 항상 실제 값으로 덮어써야 한다.
+  if (realReservation.value) {
+    status.value = realReservation.value.status === 'COMPLETED' ? 'COMPLETED' : 'IN_PROGRESS'
+  }
+})
+
+// COUNSELOR로 볼 때는 상담사 자신이 누구인지 이미 알고 있어(CURRENT_COUNSELOR_ID) 이걸로
+// 바로 찾는다. USER로 볼 때는 상대 상담사의 id를 알아내야 하므로 realReservation(실제
+// API) -> reservation(mock) 순으로 counselorId를 구해 찾는다.
+const counselor = computed(() => {
+  if (currentRole === 'COUNSELOR') {
+    return counselors.find((item) => item.id === CURRENT_COUNSELOR_ID) ?? null
+  }
+  const counselorId = realReservation.value?.counselorId ?? reservation.value?.counselorId
+  return counselorId ? (counselors.find((item) => item.id === counselorId) ?? null) : null
+})
 
 // 내 상담 목록에서 어떤 상태로 들어왔든(RESERVED에서 '상담 입장'을 눌러도) 채팅방에
 // 들어온 순간은 진행 중으로 본다. 이미 COMPLETED인 상담(리포트에서 되돌아온 경우 등)만
-// 읽기 전용으로 유지한다. 실제 상태 변경 API가 없어 화면 로컬 상태로만 관리한다.
+// 읽기 전용으로 유지한다. 초기값은 mock 기준으로 두고, onMounted에서 실제 상태로
+// 갱신한다(비동기라 setup 시점엔 realReservation이 아직 없다). 상담 종료 버튼을 누르면
+// 이 값을 직접 'COMPLETED'로 바꾸므로 ref로 유지한다(computed 불가).
 const status = ref(reservation.value?.status === 'COMPLETED' ? 'COMPLETED' : 'IN_PROGRESS')
 const statusMeta = computed(() => CONSULTATION_STATUS_META[status.value])
 
 // 상단 헤더에 보여줄 상대방. currentRole이 USER면 상담사가, COUNSELOR면 이 상담을
 // 예약한 사용자가 상대다 - 이 값만 바뀌면 같은 ChatView를 두 역할이 그대로 재사용할
-// 수 있다. 상담사 홈 목록에 없는 reservationId로 들어온 경우에만 데모용 기본 프로필
-// (chatUserProfile)로 대체한다.
+// 수 있다. 실제 API 조회가 아직 안 끝났거나 실패한 경우에만 mock → 데모용 기본 프로필
+// (chatUserProfile) 순으로 대체한다.
 const opponent = computed(() => {
   if (currentRole === 'COUNSELOR') {
-    const userName = reservation.value?.userName ?? chatUserProfile.name
+    const userName =
+      realReservation.value?.userName ?? reservation.value?.userName ?? chatUserProfile.name
     return { image: chatUserProfile.image, displayName: userName }
   }
   const name = counselor.value?.name ?? '상담사'
@@ -112,11 +160,36 @@ function toDateKey(createdAt) {
   return createdAt.slice(0, 10)
 }
 
+// 실제 메시지가 하나도 없을 때, 상담사가 미리 인사를 건넨 것처럼 화면에만 보여주는
+// 가짜 첫 메시지다 - DB에 저장하지 않으므로 목록/폴링에도 안 잡히고, 첫 메시지 전송 시
+// RESERVED -> IN_PROGRESS로 바뀌는 백엔드 규칙에도 영향을 주지 않는다. 시각은 지금
+// 시각이 아니라 "원래 상담 시작하기로 한 시간"(예약 날짜/시간)에 맞춘다 - 실제 API로
+// 조회된 값(realReservation)이 있으면 그걸, 없으면 mock reservation을 쓴다.
+const introMessage = computed(() => {
+  const info = realReservation.value ?? reservation.value
+  const date = info?.reservationDate ?? new Date().toISOString().slice(0, 10)
+  const time = info?.reservationTime ?? '00:00:00'
+  return {
+    messageId: 'intro',
+    senderType: 'COUNSELOR',
+    content: `안녕하세요! ${counselor.value?.name ?? '상담사'} 상담사입니다. 편하게 말씀해주세요.`,
+    createdAt: `${date}T${time}`,
+  }
+})
+
+// 인사말은 실제 메시지가 없을 때만이 아니라, 실제 메시지가 생긴 뒤에도 대화의 첫
+// 마디로 계속 남아있어야 한다(안 그러면 메시지를 보내는 순간 인사말이 사라져 마치
+// 허공에 대고 말한 것처럼 보인다) - 그래서 조건부 교체가 아니라 항상 맨 앞에 붙인다.
+const displayMessages = computed(() => {
+  if (isLoadingMessages.value || loadMessagesError.value) return []
+  return [introMessage.value, ...messages.value]
+})
+
 // 날짜가 바뀔 때만 구분선을 새로 만든다. Mock 메시지가 모두 같은 날짜면 구분선은
 // 한 번만 표시된다 - 복잡한 그룹핑 없이 순서대로 훑으며 직전 그룹과 날짜만 비교한다.
 const messageGroups = computed(() => {
   const groups = []
-  for (const message of messages.value) {
+  for (const message of displayMessages.value) {
     const dateKey = toDateKey(message.createdAt)
     const lastGroup = groups[groups.length - 1]
     if (lastGroup?.dateKey === dateKey) {
@@ -178,13 +251,25 @@ async function handleSend() {
 }
 
 const isEndModalOpen = ref(false)
+const isEnding = ref(false)
+const endError = ref('')
 
-function handleEndConsultation() {
-  // 실제 종료 API가 없어 화면 상태만 COMPLETED로 바꾼다(원본 myConsultations Mock은
-  // 건드리지 않는다). 종료 후에는 AI 리포트 화면으로 넘어간다.
-  status.value = 'COMPLETED'
-  isEndModalOpen.value = false
-  router.push({ name: 'consult-report', params: { reservationId: props.reservationId } })
+async function handleEndConsultation() {
+  if (isEnding.value || !reservationIdNumber.value) return
+
+  isEnding.value = true
+  endError.value = ''
+
+  try {
+    await endConsultation(reservationIdNumber.value)
+    status.value = 'COMPLETED'
+    isEndModalOpen.value = false
+    router.push({ name: 'consult-report', params: { reservationId: props.reservationId } })
+  } catch {
+    endError.value = '상담을 종료하지 못했습니다. 다시 시도해주세요.'
+  } finally {
+    isEnding.value = false
+  }
 }
 
 // 사용자는 내 상담으로, 상담사는 상담사 홈으로 - 들어온 쪽으로 그대로 돌아간다.
@@ -228,9 +313,9 @@ function goBack() {
       </template>
     </AppHeader>
 
-    <template v-if="reservation">
+    <template v-if="reservationIdNumber">
       <div class="consult-chat-view__messages">
-        <template v-if="messages.length">
+        <template v-if="displayMessages.length">
           <template v-for="group in messageGroups" :key="group.dateKey">
             <div class="consult-chat-view__date-divider">
               <span>{{ formatMonthDayWeekdayKo(group.dateKey) }}</span>
@@ -245,9 +330,6 @@ function goBack() {
         </template>
         <p v-else-if="loadMessagesError" class="consult-chat-view__notice-empty">
           메시지를 불러오지 못했어요.
-        </p>
-        <p v-else-if="!isLoadingMessages" class="consult-chat-view__notice-empty">
-          상담을 시작해보세요.
         </p>
         <div ref="messagesEndRef" class="consult-chat-view__messages-end" />
       </div>
@@ -276,9 +358,14 @@ function goBack() {
       <p class="consult-chat-view__modal-desc">
         상담을 종료하면 채팅 내용이 상담 리포트 생성에 활용됩니다.
       </p>
+      <p v-if="endError" class="consult-chat-view__modal-error">{{ endError }}</p>
       <template #footer>
-        <BaseButton variant="secondary" @click="isEndModalOpen = false">취소</BaseButton>
-        <BaseButton variant="primary" @click="handleEndConsultation">상담 종료</BaseButton>
+        <BaseButton variant="secondary" :disabled="isEnding" @click="isEndModalOpen = false">
+          취소
+        </BaseButton>
+        <BaseButton variant="primary" :disabled="isEnding" @click="handleEndConsultation">
+          상담 종료
+        </BaseButton>
       </template>
     </BaseModal>
   </div>
@@ -453,5 +540,11 @@ function goBack() {
   font-size: 13px;
   line-height: 1.5;
   color: var(--color-text-secondary, #4b564e);
+}
+
+.consult-chat-view__modal-error {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--color-point, #c1442e);
 }
 </style>
