@@ -317,10 +317,13 @@ export const SEED_GOAL = {
     dealType: SEED_MARKET.dealType,
     areaMin: SEED_MARKET.areaMin,
     areaMax: SEED_MARKET.areaMax,
-    // 보증금 범위는 진단에서 선택하지 않았다. 백엔드가 @NotNull로 받으므로 "제한 없음"에
-    // 해당하는 기본값으로 정규화되어 저장된다.
-    depositMin: 0,
-    depositMax: 100000000000,
+    // 보증금 범위는 진단에서 선택하지 않았다. 목표 조회(GET /goals/{goalId})가 null로 내려줘야
+    // 수정 폼이 "답하지 않은 조건"으로 보고 슬라이더 기본값(1억~3억)을 쓴다
+    // (useGoalConditionSteps.applyInitialValue). "제한 없음"을 뜻하는 큰 수(1000억)를 넣으면
+    // 그 값이 그대로 슬라이더에 채워지는데, 보증금 단계의 범위는 0~10억이라 큰 라벨만
+    // "0억 ~ 1000억"으로 튀고 눈금과 어긋난다.
+    depositMin: null,
+    depositMax: null,
   },
 
   targetDate: '2029-07-31',
