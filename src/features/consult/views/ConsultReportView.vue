@@ -99,13 +99,19 @@ onMounted(() => {
   loadReport()
 })
 
-// nextActions.actionType별로 이동할 기존 서비스 화면. 저축 전용 화면이 따로 없고
-// 월 저축 조정도 목표 상세 화면 안에서 이뤄지므로 SAVING/GOAL 모두 그리로 보낸다.
-async function goToGoal() {
+/* ── 바로가기 ──────────────────────────────────────────────────
+   예전엔 AI 리포트 응답의 nextActions를 그대로 렌더링했지만, 이제 리포트 구조에서
+   nextActions가 빠져서 대신 상담의 category(reservation, 리포트 생성 여부와 무관하게
+   항상 있는 값)를 기준으로 고정된 바로가기를 보여준다. */
+
+// 저축 전용 화면이 따로 없고 월 저축 조정도 목표 상세 화면 안에서 이뤄지므로
+// SAVING/HOUSING 모두 목표 상세로 보낸다. goal-detail/goal-edit 모두 목표가 없으면
+// goal-empty로 보내는 규칙이 같아 라우트 이름만 다르게 받는다.
+async function goToActiveGoal(routeName) {
   try {
     const activeGoal = await fetchActiveGoal()
     if (activeGoal) {
-      router.push({ name: 'goal-detail', params: { goalId: activeGoal.goalId } })
+      router.push({ name: routeName, params: { goalId: activeGoal.goalId } })
     } else {
       router.push({ name: 'goal-empty' })
     }
@@ -114,21 +120,62 @@ async function goToGoal() {
   }
 }
 
-// 실제로 이동할 화면이 있는 actionType만 등록한다. LOAN처럼 연결할 화면이 아직
-// 없는 타입은 여기 없으면 CTA 자체를 만들지 않는다 - "준비 중" 같은 대체 문구도
-// 쓰지 않고, 제목/설명만 있는 카드로 자연스럽게 끝낸다.
-const ACTION_CTA = {
-  SAVING: { label: '저축 계획 확인하기', handler: goToGoal },
-  GOAL: { label: '목표 수정하기', handler: goToGoal },
+const goToGoal = () => goToActiveGoal('goal-detail')
+const goToGoalEdit = () => goToActiveGoal('goal-edit')
+
+function goToAsset() {
+  router.push({ name: 'asset-detail' })
 }
 
-// report는 GENERATING/FAILED일 때 null일 수 있어 옵셔널 체이닝으로 안전하게 처리한다.
-const nextActions = computed(() =>
-  (report.value?.nextActions ?? []).map((action) => ({
-    ...action,
-    cta: ACTION_CTA[action.actionType] ?? null,
-  })),
-)
+function goToPolicy() {
+  router.push({ name: 'policy' })
+}
+
+// 카테고리별 고정 바로가기. 실제로 이동할 화면이 있는 카테고리만 등록한다.
+const CATEGORY_NEXT_STEPS = {
+  GOAL_SETTING: [
+    {
+      title: '목표를 다시 설정해보세요',
+      description: '상담 내용을 반영해 목표 조건을 수정할 수 있어요.',
+      label: '목표 수정하기',
+      handler: goToGoalEdit,
+    },
+  ],
+  SAVING: [
+    {
+      title: '저축 계획을 확인해보세요',
+      description: '현재 월 저축액이 목표에 적절한지 다시 확인해보세요.',
+      label: '내 목표 보러 가기',
+      handler: goToGoal,
+    },
+  ],
+  HOUSING: [
+    {
+      title: '목표 조건을 확인해보세요',
+      description: '상담에서 나온 주거 조건이 목표에 반영됐는지 확인해보세요.',
+      label: '내 목표 보러 가기',
+      handler: goToGoal,
+    },
+  ],
+  ASSET_MANAGEMENT: [
+    {
+      title: '내 자산을 확인해보세요',
+      description: '상담에서 다룬 자산 구성을 다시 살펴보세요.',
+      label: '내 자산 확인하기',
+      handler: goToAsset,
+    },
+  ],
+  LOAN: [
+    {
+      title: '맞춤 정책을 확인해보세요',
+      description: '현재 조건에서 활용 가능한 대출·정책이 있는지 확인해보세요.',
+      label: '맞춤 정책 확인하기',
+      handler: goToPolicy,
+    },
+  ],
+}
+
+const nextSteps = computed(() => CATEGORY_NEXT_STEPS[reservation.value?.category] ?? [])
 
 // 종료된 채팅 화면으로 다시 돌아가지 않도록 router.back()이 아니라 내 상담으로
 // 직접 이동한다. 리포트 화면 자체는 항상 뒤로가기로 여기(내 상담)로 나가면 된다.
@@ -226,23 +273,22 @@ function goToMyConsultations() {
           </BaseCard>
         </section>
 
-        <section class="consult-report-view__section">
-          <h2 class="consult-report-view__section-title">다음 할 일</h2>
+        <section v-if="nextSteps.length" class="consult-report-view__section">
+          <h2 class="consult-report-view__section-title">바로가기</h2>
           <div class="consult-report-view__actions">
             <BaseCard
-              v-for="action in nextActions"
-              :key="action.title"
+              v-for="step in nextSteps"
+              :key="step.title"
               class="consult-report-view__action-card"
             >
-              <p class="consult-report-view__action-title">{{ action.title }}</p>
-              <p class="consult-report-view__action-desc">{{ action.description }}</p>
+              <p class="consult-report-view__action-title">{{ step.title }}</p>
+              <p class="consult-report-view__action-desc">{{ step.description }}</p>
               <BaseButton
-                v-if="action.cta"
                 class="consult-report-view__action-button"
                 variant="highlight"
-                @click="action.cta.handler()"
+                @click="step.handler()"
               >
-                <span>{{ action.cta.label }}</span>
+                <span>{{ step.label }}</span>
                 <BaseChevronIcon :size="12" />
               </BaseButton>
             </BaseCard>
