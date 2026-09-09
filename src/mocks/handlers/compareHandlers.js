@@ -12,6 +12,7 @@ import {
   mockCompareGoalsSnapshotNotFound,
   mockCompareGoalsSuccess,
 } from '@/mocks/data/compareGoals'
+import { hasActiveGoal } from '@/mocks/data/demoState'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
@@ -52,7 +53,8 @@ export const compareHandlers = [
   http.get(`${API_BASE_URL}/api/v1/comparison/goals`, ({ request }) => {
     const { assetRange, ageRange, cohortSize } = resolveCohort(request)
 
-    if (ageRange === TEST_AGE_RANGE.NO_GOAL) {
+    // 시연용 "목표 없음" 상태(demoState.js)도 목표를 아직 안 세운 사용자와 같은 응답을 준다.
+    if (ageRange === TEST_AGE_RANGE.NO_GOAL || !hasActiveGoal()) {
       return HttpResponse.json(mockCompareGoalsSnapshotNotFound, { status: 404 })
     }
     if (ageRange === TEST_AGE_RANGE.NO_ASSET) {
@@ -103,7 +105,7 @@ export const compareHandlers = [
 
     // 목표는 없지만 자산 연동은 있는 사용자: saving.mine만 null인 성공 응답.
     // ageRange는 화면 노출용 실제 값이 아니라 테스트 트리거이므로 그대로 보여주지 않고 기본값으로 되돌린다.
-    if (ageRange === TEST_AGE_RANGE.NO_GOAL) {
+    if (ageRange === TEST_AGE_RANGE.NO_GOAL || !hasActiveGoal()) {
       return HttpResponse.json({
         ...mockCompareAssetsNoGoal,
         data: { ...mockCompareAssetsNoGoal.data, cohort: { ...BASE_COHORT, assetRange } },
