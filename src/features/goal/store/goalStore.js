@@ -27,13 +27,6 @@ export const useGoalStore = defineStore('goal', () => {
   // 없을 수 있어 null로 시작하고, 없으면 화면에서 "이번 진단 기준" 영역 자체를 숨긴다.
   const recommendationBasis = ref(null)
 
-  // 진단을 마치고 결과 화면에 "처음" 들어왔을 때만 안내 문구가 중앙에서 나타나 상단으로
-  // 이동하는 인트로 애니메이션을 재생하기 위한 1회성 신호. GoalConditionStepsView.submit()이
-  // 결과 화면으로 넘어가기 직전에 true로 세팅하고, GoalRecommendationsView는 마운트 시 이
-  // 값을 한 번 읽자마자 바로 false로 되돌린다(consume-once) — 그래서 상세 화면을 갔다가
-  // 돌아오는 등 이후 재진입에서는 항상 false이고, 기존 결과 화면 애니메이션만 그대로 탄다.
-  const playResultIntro = ref(false)
-
   const isSaving = ref(false)
   const saveError = ref(null)
 
@@ -313,7 +306,6 @@ export const useGoalStore = defineStore('goal', () => {
     isRecommending,
     recommendError,
     recommendationBasis,
-    playResultIntro,
     loadRecommendations,
     loadRecommendationResult,
     isSaving,
