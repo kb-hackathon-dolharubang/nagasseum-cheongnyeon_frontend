@@ -46,17 +46,12 @@ const CATEGORY_OPTIONS = [{ label: '전체', value: 'ALL' }, ...CONSULT_CATEGORY
 // 상담사 목록 필터 조건으로 그대로 쓰인다.
 const selectedCategory = ref('ALL')
 
-// '상담사 보기'(최근 진단 목표 카드)로 들어왔는지. true면 예약 화면에서 목표 진단 연계
-// 상담(GOAL_DIAGNOSIS)으로, 아니면 분야 칩 기준 일반 상담(GENERAL)으로 이어간다.
-const cameFromGoalDiagnosis = ref(false)
-
 const selectedCategoryLabel = computed(
   () => CATEGORY_OPTIONS.find((option) => option.value === selectedCategory.value)?.label,
 )
 
 function handleCategorySelect(value) {
   selectedCategory.value = value
-  cameFromGoalDiagnosis.value = false
 }
 
 // Mock 데이터의 categories는 분야 칩과 같은 한글 라벨을 쓰므로, 선택된 칩의 라벨로 바로
@@ -71,20 +66,13 @@ const filteredCounselors = computed(() => {
 function goToReservation(counselorId) {
   // '전체'는 특정 분야를 고른 것이 아니라 null로 넘긴다. 예약 화면들은 이 값을 그대로
   // 받아 상담 정보 단계까지 이어서 전달하기만 한다(router state라 URL에는 남지 않는다).
+  // GOAL_DIAGNOSIS 상담은 이 화면이 아닌 다른 진입점에서 만든다 - 여기선 항상 GENERAL.
   const category = selectedCategory.value === 'ALL' ? null : selectedCategory.value
-  const consultationType = cameFromGoalDiagnosis.value ? 'GOAL_DIAGNOSIS' : 'GENERAL'
   router.push({
     name: 'consult-reservation',
     params: { counselorId },
-    state: { category, consultationType },
+    state: { category, consultationType: 'GENERAL' },
   })
-}
-
-function handleViewCounselors() {
-  // 최근 진단 목표를 들고 온 흐름임을 표시해 예약 화면까지 이어간다. 분야 칩은 이
-  // 흐름과 무관하므로 '전체'로 되돌린다.
-  selectedCategory.value = 'ALL'
-  cameFromGoalDiagnosis.value = true
 }
 
 function handleViewMyConsultations() {
@@ -117,14 +105,6 @@ function scrollToCounselors() {
         </p>
         <p class="consult-view__goal-date">목표 시점 {{ diagnosisGoal.targetDate }}</p>
         <p class="consult-view__goal-desc">전문가와 함께 진단 결과를 검토해보세요.</p>
-        <BaseButton
-          class="consult-view__goal-cta"
-          variant="primary"
-          size="lg"
-          @click="handleViewCounselors"
-        >
-          상담사 보기
-        </BaseButton>
       </template>
       <template v-else>
         <p class="consult-view__goal-heading">아직 진단한 목표가 없어요</p>
