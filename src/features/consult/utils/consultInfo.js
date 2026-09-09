@@ -1,4 +1,5 @@
 import { recentDiagnosisGoal, generalConsultInfo } from '@/features/consult/data/counselors'
+import { formatManwon, formatYearMonthFlexibleKo } from '@/shared/utils/formatter'
 
 // 상담 예약 2단계('상담 정보')와 상담 리포트 화면이 "상담에 활용되는 정보"를 똑같은
 // 방식으로 만든다 - AI가 새로 추론하는 값이 아니라 기존 두 원본 Mock(recentDiagnosisGoal/
@@ -23,6 +24,86 @@ export function buildConsultInfo(consultationType) {
     targetDate: generalConsultInfo.targetDate ?? null,
     loanPreference: generalConsultInfo.loanPreference ?? null,
   }
+}
+
+/* ── 상담 기준 정보 표시용 행(row) 목록 ──────────────────────────────────────
+   상담 정보 Bottom Sheet(ConsultationInfoCard)와 상담 리포트 화면이 "상담 기준 정보"를
+   같은 데이터(consultationData)로 같은 라벨/포맷팅을 써서 보여준다 - 로직을 한 곳에만
+   둔다. */
+
+const HOUSING_TYPE_LABELS = {
+  APT: '아파트',
+  OFFICETEL: '오피스텔',
+  ROW_HOUSE: '연립·다세대',
+  DETACHED: '단독·다가구',
+}
+const TRANSACTION_TYPE_LABELS = {
+  JEONSE: '전세',
+  WOLSE: '월세',
+}
+
+function formatHousingPreference(pref) {
+  if (!pref) return null
+  const regionLabel = [pref.province?.name, pref.district?.name, pref.neighborhood?.name]
+    .filter(Boolean)
+    .join(' ')
+  return [
+    regionLabel,
+    HOUSING_TYPE_LABELS[pref.housingType] ?? pref.housingType,
+    TRANSACTION_TYPE_LABELS[pref.transactionType] ?? pref.transactionType,
+    pref.areaRange?.label,
+  ]
+    .filter(Boolean)
+    .join(' · ')
+}
+
+// GOAL_DIAGNOSIS는 기존 진단 결과(추천 조건/추천 월 저축액 - 수정 불가)에 사용자가 상담
+// 정보 Bottom Sheet에서 채운 값(현재 희망 조건/현재 자산/월 저축 가능액/목표 시점)을 더해
+// 보여준다. GENERAL은 그 사용자 값 4개만 보여준다.
+export function buildConsultationInfoRows(consultationType, consultationData) {
+  const data = consultationData
+
+  if (consultationType === 'GOAL_DIAGNOSIS') {
+    return [
+      { label: '현재 희망 조건', value: formatHousingPreference(data.housingPreference) },
+      {
+        label: '추천 조건',
+        value: formatHousingPreference(recentDiagnosisGoal.recommendedCondition),
+      },
+      {
+        label: '현재 자산',
+        value: data.currentAsset != null ? formatManwon(data.currentAsset) : null,
+      },
+      {
+        label: '월 저축 가능액',
+        value: data.monthlySaving != null ? formatManwon(data.monthlySaving) : null,
+      },
+      {
+        label: '목표 시점',
+        value: data.targetDate ? formatYearMonthFlexibleKo(data.targetDate) : null,
+      },
+      {
+        label: '추천 월 저축액',
+        value: formatManwon(recentDiagnosisGoal.recommendedMonthlySaving),
+      },
+    ]
+  }
+
+  return [
+    { label: '희망 주거 조건', value: formatHousingPreference(data.housingPreference) },
+    {
+      label: '현재 자산',
+      value: data.currentAsset != null ? formatManwon(data.currentAsset) : null,
+    },
+    {
+      label: '월 저축 가능액',
+      value: data.monthlySaving != null ? formatManwon(data.monthlySaving) : null,
+    },
+    {
+      label: '목표 시점',
+      value: data.targetDate ? formatYearMonthFlexibleKo(data.targetDate) : null,
+    },
+  ]
 }
 
 /* ── 예약 생성 API(POST /api/v1/consultations) 요청 매핑 ──────────────────────

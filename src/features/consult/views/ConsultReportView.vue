@@ -7,13 +7,12 @@ import BaseCard from '@/shared/components/atoms/base/card/BaseCard.vue'
 import BaseButton from '@/shared/components/atoms/base/button/BaseButton.vue'
 import BaseClimbingLoader from '@/shared/components/atoms/feedback/BaseClimbingLoader.vue'
 import BaseChevronIcon from '@/shared/components/atoms/base/icon/BaseChevronIcon.vue'
-import ConsultationInfoCard from '@/features/consult/components/ConsultationInfoCard.vue'
 import { counselors } from '@/features/consult/data/counselors'
 import {
   CATEGORY_FROM_API_VALUES,
   getCategorySubjectLabel,
 } from '@/features/consult/constants/categories'
-import { buildConsultInfo } from '@/features/consult/utils/consultInfo'
+import { buildConsultInfo, buildConsultationInfoRows } from '@/features/consult/utils/consultInfo'
 import { formatMonthDayWeekdayKo } from '@/shared/utils/formatter'
 import { fetchActiveGoal } from '@/features/goal/api/goalApi'
 import { useAuthStore } from '@/features/auth'
@@ -76,11 +75,39 @@ const scheduleLabel = computed(() =>
   reservation.value ? formatMonthDayWeekdayKo(reservation.value.reservationDate) : '',
 )
 
+// "01 상담 기준 정보"를 리포트답게 압축된 형태로 보여준다 - 희망 주거 조건처럼 긴 문장형
+// 값(라벨에 "조건"이 들어간 행)은 위에 한 줄로, 자산/저축액/시점처럼 짧은 값은 2열
+// 그리드로 나눠 배치한다. GOAL_DIAGNOSIS(추천 조건/추천 월 저축액 포함 6행)도 같은
+// 방식으로 자연히 나뉜다. 값이 없는 행은(정상 흐름에선 항상 채워져 있지만) 억지로 빈
+// 줄을 만들지 않도록 걸러낸다.
+const consultInfoRows = computed(() => {
+  if (!reservation.value || !consultInfo.value) return []
+  return buildConsultationInfoRows(reservation.value.consultationType, consultInfo.value).filter(
+    (row) => row.value,
+  )
+})
+const consultInfoWideRows = computed(() =>
+  consultInfoRows.value.filter((row) => row.label.includes('조건')),
+)
+const consultInfoGridRows = computed(() =>
+  consultInfoRows.value.filter((row) => !row.label.includes('조건')),
+)
+
 /* ── 리포트 조회 ───────────────────────────────────────────────
    상담 종료 시점에 백엔드가 이미 생성해 저장해둔 리포트를 읽어오기만 한다. */
 
 const report = ref(null)
 const reportStatus = ref('GENERATING')
+
+// "02 상담 요약"이 긴 문장이 한 덩어리로 보이지 않도록 마침표 단위로 나눠 문단
+// 간격을 준다 - summary 문자열 자체는 그대로 두고 화면에 나눠 그리기만 한다.
+const summaryParagraphs = computed(() => {
+  const text = report.value?.summary ?? ''
+  return text
+    .split(/(?<=[.!?])\s+/)
+    .map((sentence) => sentence.trim())
+    .filter(Boolean)
+})
 
 async function loadReport() {
   reportStatus.value = 'GENERATING'
@@ -225,14 +252,38 @@ function goToMyConsultations() {
         </div>
       </div>
 
+      <!-- 리포트 전체를 빠르게 파악할 수 있는 결론 - 새로 만들어내는 문장이 아니라
+           report.result를 그대로 보여준다(요약값이 생겼을 때만 의미가 있어 COMPLETED일
+           때만 노출). -->
+      <section v-if="reportStatus === 'COMPLETED'" class="consult-report-view__conclusion">
+        <p class="consult-report-view__conclusion-label">이번 상담의 결론</p>
+        <p class="consult-report-view__conclusion-text">{{ report.result }}</p>
+      </section>
+
       <!-- 상담 기준 정보는 AI가 만드는 값이 아니라 예약 시점부터 이미 알고 있던 값이라,
            리포트 생성 상태(GENERATING/FAILED)와 무관하게 항상 보여준다. -->
       <section class="consult-report-view__section">
-        <h2 class="consult-report-view__section-title">상담 기준 정보</h2>
-        <ConsultationInfoCard
-          :consultation-type="reservation.consultationType"
-          :consultation-data="consultInfo"
-        />
+        <h2 class="consult-report-view__section-title">01 상담 기준 정보</h2>
+        <BaseCard class="consult-report-view__info-card">
+          <div
+            v-for="row in consultInfoWideRows"
+            :key="row.label"
+            class="consult-report-view__info-wide"
+          >
+            <span class="consult-report-view__info-label">{{ row.label }}</span>
+            <p class="consult-report-view__info-value">{{ row.value }}</p>
+          </div>
+          <div class="consult-report-view__info-grid">
+            <div
+              v-for="row in consultInfoGridRows"
+              :key="row.label"
+              class="consult-report-view__info-cell"
+            >
+              <span class="consult-report-view__info-label">{{ row.label }}</span>
+              <p class="consult-report-view__info-value">{{ row.value }}</p>
+            </div>
+          </div>
+        </BaseCard>
       </section>
 
       <div v-if="reportStatus === 'GENERATING'" class="consult-report-view__generating">
@@ -260,50 +311,74 @@ function goToMyConsultations() {
 
       <template v-else>
         <section class="consult-report-view__section">
-          <h2 class="consult-report-view__section-title">상담 요약</h2>
-          <BaseCard>
-            <p class="consult-report-view__summary-text">{{ report.summary }}</p>
-          </BaseCard>
+          <h2 class="consult-report-view__section-title">02 상담 요약</h2>
+          <div class="consult-report-view__summary-body">
+            <p
+              v-for="(sentence, index) in summaryParagraphs"
+              :key="index"
+              class="consult-report-view__summary-text"
+            >
+              {{ sentence }}
+            </p>
+          </div>
         </section>
 
         <section
           v-if="report.mainConcerns?.length || report.discussionPoints?.length"
           class="consult-report-view__section"
         >
-          <h2 class="consult-report-view__section-title">상담 내용</h2>
+          <h2 class="consult-report-view__section-title">03 상담 내용</h2>
           <BaseCard class="consult-report-view__discussion-card">
             <div v-if="report.mainConcerns?.length" class="consult-report-view__subsection">
               <h3 class="consult-report-view__subtitle">핵심 고민</h3>
               <ul class="consult-report-view__list">
-                <li v-for="item in report.mainConcerns" :key="item">{{ item }}</li>
+                <li
+                  v-for="(item, index) in report.mainConcerns"
+                  :key="item"
+                  class="consult-report-view__list-item"
+                >
+                  <span class="consult-report-view__list-marker">{{ index + 1 }}</span>
+                  <span>{{ item }}</span>
+                </li>
               </ul>
             </div>
             <div v-if="report.discussionPoints?.length" class="consult-report-view__subsection">
               <h3 class="consult-report-view__subtitle">함께 확인한 내용</h3>
               <ul class="consult-report-view__list">
-                <li v-for="item in report.discussionPoints" :key="item">{{ item }}</li>
+                <li
+                  v-for="(item, index) in report.discussionPoints"
+                  :key="item"
+                  class="consult-report-view__list-item"
+                >
+                  <span class="consult-report-view__list-marker">{{ index + 1 }}</span>
+                  <span>{{ item }}</span>
+                </li>
               </ul>
             </div>
           </BaseCard>
         </section>
 
-        <section class="consult-report-view__section">
-          <h2 class="consult-report-view__section-title">상담 결과</h2>
-          <BaseCard class="consult-report-view__discussion-card">
-            <div class="consult-report-view__subsection">
-              <h3 class="consult-report-view__subtitle">상담 결과</h3>
-              <p class="consult-report-view__result-text">{{ report.result }}</p>
-            </div>
-            <div v-if="report.recommendations?.length" class="consult-report-view__subsection">
-              <h3 class="consult-report-view__subtitle">상담에서 제안된 내용</h3>
-              <ul class="consult-report-view__list">
-                <li v-for="item in report.recommendations" :key="item">{{ item }}</li>
-              </ul>
-            </div>
-          </BaseCard>
+        <section v-if="report.recommendations?.length" class="consult-report-view__section">
+          <h2 class="consult-report-view__section-title">04 상담 제안</h2>
+          <ul class="consult-report-view__list">
+            <li
+              v-for="item in report.recommendations"
+              :key="item"
+              class="consult-report-view__list-item"
+            >
+              <span class="consult-report-view__list-marker consult-report-view__list-marker--check"
+                >✓</span
+              >
+              <span>{{ item }}</span>
+            </li>
+          </ul>
         </section>
 
-        <section v-if="nextSteps.length" class="consult-report-view__section">
+        <section
+          v-if="nextSteps.length"
+          class="consult-report-view__section consult-report-view__section--next-steps"
+        >
+          <h2 class="consult-report-view__section-title">다음 단계</h2>
           <div class="consult-report-view__actions">
             <BaseCard
               v-for="step in nextSteps"
@@ -396,6 +471,36 @@ function goToMyConsultations() {
   color: var(--color-text-secondary, #9aa09a);
 }
 
+/* ── 이번 상담의 결론 ──────────────────────────────────────────
+   리포트를 빠르게 파악할 수 있도록 다른 section보다 먼저, 살짝 강조해서 보여준다.
+   새 색을 추가하지 않고 다른 카드 CTA(action-button)에도 쓰는 옅은 primary 배경 +
+   진한 primary 텍스트 조합을 그대로 쓰고, 왼쪽 accent border만 더한다. */
+
+.consult-report-view__conclusion {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border-left: 3px solid var(--color-primary, #1d6b3f);
+  background: var(--color-primary-soft, #e3ffe8);
+}
+
+.consult-report-view__conclusion-label {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-primary, #1d6b3f);
+}
+
+.consult-report-view__conclusion-text {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.6;
+  color: var(--color-primary, #1d6b3f);
+}
+
 /* ── 섹션 공통 ─────────────────────────────────────────────── */
 
 .consult-report-view__section {
@@ -411,19 +516,84 @@ function goToMyConsultations() {
   color: var(--color-text-secondary, #9aa09a);
 }
 
+.consult-report-view__summary-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  /* section-title의 margin-bottom(8px)에 더해, 본문 시작 지점을 조금 더 떼어
+     제목/본문 경계를 분명히 한다. */
+  margin-top: 4px;
+}
+
 .consult-report-view__summary-text {
   margin: 0;
-  font-size: 13.5px;
-  line-height: 1.6;
+  padding: 0 4px;
+  font-size: 14px;
+  line-height: 1.7;
   color: var(--color-text-primary, #ffffff);
 }
 
-/* ── 핵심 고민 / 상담 결과 카드 내부 소제목 ────────────────────── */
+/* ── 01 상담 기준 정보: 압축 그리드 ─────────────────────────────
+   희망 주거 조건처럼 긴 문장형 값은 위에 한 줄로, 자산/저축액/시점처럼 짧은 값은
+   2열 그리드로 묶어서 세로 공간과 divider 반복을 줄인다. */
+
+.consult-report-view__info-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.consult-report-view__info-wide {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.consult-report-view__info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 16px;
+}
+
+.consult-report-view__info-wide + .consult-report-view__info-grid {
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border, #262626);
+}
+
+.consult-report-view__info-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.consult-report-view__info-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--color-text-secondary, #9aa09a);
+}
+
+.consult-report-view__info-value {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--color-text-primary, #ffffff);
+  overflow-wrap: break-word;
+}
+
+/* ── 핵심 고민 / 함께 확인한 내용 카드 내부 소제목 ─────────────── */
 
 .consult-report-view__discussion-card {
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+/* BaseCard 기본(lg) 상하 padding(20px)이 목록 카드엔 다소 길어 보여, 이 카드만
+   상하 padding을 줄인다 - 좌우는 그대로 둬서 다른 카드와 정렬을 맞춘다. */
+.consult-report-view__discussion-card.base-card--lg {
+  padding-top: 14px;
+  padding-bottom: 14px;
 }
 
 .consult-report-view__subsection + .consult-report-view__subsection {
@@ -438,22 +608,54 @@ function goToMyConsultations() {
   color: var(--color-text-primary, #ffffff);
 }
 
+/* mainConcerns/discussionPoints/recommendations 공통 리스트. 번호 없이 촘촘한
+   불릿 목록 대신, 항목마다 작은 마커 + 여백으로 서로 구분되어 읽히게 한다. */
 .consult-report-view__list {
   margin: 0;
-  padding-left: 18px;
+  padding: 0 4px;
+  list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 10px;
+}
+
+.consult-report-view__list-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
   font-size: 13px;
   line-height: 1.5;
   color: var(--color-text-secondary, #9aa09a);
 }
 
-.consult-report-view__result-text {
-  margin: 0;
-  font-size: 13.5px;
-  line-height: 1.6;
-  color: var(--color-text-primary, #ffffff);
+.consult-report-view__list-marker {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  /* list-item이 align-items: flex-start라 마커 박스 윗변 자체는 옆 글자와 이미
+     맞아 있지만, 마커 안 숫자는 18px 원 안에서 가운데 정렬돼 있고 옆 글자는 13px/1.5
+     줄 안에서 살짝 아래로 치우쳐 보여 시각적으로 어긋나 보인다. 그 차이만큼 살짝
+     내려서 숫자와 글자 첫 줄이 같은 높이에서 시작하는 것처럼 보이게 맞춘다. */
+  margin-top: 2px;
+  border-radius: 9px;
+  background: var(--color-primary-soft, #e3ffe8);
+  color: var(--color-primary, #1d6b3f);
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.consult-report-view__list-marker--check {
+  font-size: 11px;
+}
+
+/* 04 상담 제안 목록과 다음 단계 CTA는 성격이 달라(참고 정보 vs 실행 버튼), 기본
+   section 간격(20px)보다 조금 더 떼어 구분을 분명히 한다. */
+.consult-report-view__section--next-steps {
+  margin-top: 12px;
 }
 
 /* ── 다음 할 일 ────────────────────────────────────────────── */
