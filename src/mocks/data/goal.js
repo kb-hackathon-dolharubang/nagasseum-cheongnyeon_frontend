@@ -158,8 +158,6 @@ export const mockActiveGoal = {
   targetDate: mockGoal.targetDate,
 }
 
-// GET /api/v1/goals/summary 응답 mock (홈 화면). 상세 화면과 같은 SEED_GOAL을 가리키므로
-// goalId/targetAmount/targetDate/progress가 mockGoalDetail과 항상 일치한다.
 export const mockGoalSummaryHome = {
   goalId: SEED_GOAL.id,
   goalType: SEED_GOAL.goalType,
@@ -186,22 +184,8 @@ export const mockGoalNotFoundResponse = {
   data: null,
   error: { code: 'GOAL_001', message: '활성 목표를 찾을 수 없습니다.' },
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// POST /api/v1/goals/recommendations 응답 mock
-//
-// 필드 구성은 백엔드 GoalRecommendationResponse를 그대로 따른다. 명세서 예시에 있는
-// loanO.shortenedMonths는 백엔드 DTO(LoanOPlan)에 없어 여기서도 넣지 않는다 — 백엔드에
-// 추가되면 여기와 결과 화면을 같이 고쳐야 한다.
-//
-// VALUE 알고리즘은 아직 미구현이라(명세서 "알고리즘 구현 현황" 2026-08-12 기준) 응답에서 빠진다.
-// 대안을 내지 못한 알고리즘은 응답에서 제외되므로 recommendations 길이가 4보다 작을 수 있다는
-// 계약을, 목에서도 그대로 재현해 두는 편이 화면 검증에 유리하다.
-// ─────────────────────────────────────────────────────────────────────────────
-
 const PYEONG_TO_M2 = 3.3058
 
-// 실거래 시세가 없어 지역 코드로 대충 갈라 쓴다 — 데모용 근사치일 뿐 의미 있는 값이 아니다.
 const MOCK_RECOMMENDATION_MEDIAN = {
   JEONSE: 350000000,
   WOLSE: 50000000,
@@ -209,7 +193,6 @@ const MOCK_RECOMMENDATION_MEDIAN = {
 
 function resolveRegionName(regionCode) {
   if (!regionCode) return ''
-  // 시도 2자리로 오면 시군구를 고르지 않는다 — 사용자가 묻지 않은 시군구를 정해주지 않는다는 규칙.
   if (regionCode.length === 2) {
     return SIDO_LIST.find((sido) => sido.code === regionCode)?.name ?? ''
   }
@@ -311,24 +294,6 @@ export function buildMockRecommendations(payload) {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// GET /api/v1/goals/recommendation 응답 mock (진단 결과 화면 전용)
-//
-// 조건 입력 단계(recommendations, 쿼리 조건 기반)와 달리 memberId(인증 토큰)만으로 이미 계산된
-// 추천 결과를 돌려받는 엔드포인트라 조건을 입력받지 않는다. 필드 구성은 실제 백엔드 응답
-// 예시를 그대로 옮긴 것이다(2026-08-19 확인):
-// - originalPreference: 진단 시 사용자가 입력한 원래 희망 조건 + 목표 시점/월 저축액.
-//   targetDate는 사용자가 목표 시점을 입력하지 않았으면 null일 수 있다 — 이때는
-//   recommendations에 PREFERENCE_DATE_FIXED 자체가 없다(아래
-//   buildMockRecommendationResultWithoutDateFixed 참고).
-// - recommendations[].type: PREFERENCE_SAVING_FIXED(월 저축 고정) / PREFERENCE_DATE_FIXED
-//   (목표 시점 고정, 없을 수 있음) / REALISTIC / HOLD_OUT 4종.
-// - condition.marketMedianAmount는 "현재" 실거래 중앙값이 아니라 loanX.targetDate 시점
-//   기준으로 예측한 미래 시세다. recommendation은 기본적으로
-//   marketMedianAmount(목표 시점 예상 시세) < loanX.targetAmount(대출 없이 준비 가능한
-//   예산)일 때만 성립하는 구조라(이 예산이면 이 조건을 살 수 있다는 뜻), 여기서도 두 값을
-//   같게 두지 않는다 — 화면 검증 시 두 필드의 의미가 섞이지 않았는지 확인할 수 있게 한다.
-// ─────────────────────────────────────────────────────────────────────────────
 export function buildMockRecommendationResult() {
   return {
     originalPreference: {
@@ -368,13 +333,43 @@ export function buildMockRecommendationResult() {
           targetDate: '2051-08',
           monthlySaving: 500000,
         },
-        loanO: {
-          loanAmount: 80000000,
-          targetAmount: 570000000,
-          targetDate: '2044-12',
-          monthlySaving: 500000,
-          shortenedMonths: 80,
-        },
+        loans: [
+          {
+            policyId: 'beotimmok-jeonse',
+            productName: '청년전용 버팀목전세자금대출',
+            eligible: true,
+            ineligibleReason: null,
+            plan: {
+              loanAmount: 80000000,
+              targetAmount: 570000000,
+              targetDate: '2044-12',
+              monthlySaving: 500000,
+            },
+            aiGuide:
+              '이 대출은 혼인 여부에 따라 한도가 달라질 수 있어요. 실제 신청 전 취급 은행에서 직접 확인해보세요.',
+          },
+          {
+            policyId: 'didimdol-jeonse',
+            productName: '디딤돌 전세대출',
+            eligible: false,
+            ineligibleReason: '부부합산 순자산 기준을 초과해 이 대출은 받기 어려워요.',
+            plan: null,
+            aiGuide: null,
+          },
+          {
+            policyId: 'bank-general-jeonse',
+            productName: '은행 일반 전세자금대출',
+            eligible: true,
+            ineligibleReason: null,
+            plan: {
+              loanAmount: 120000000,
+              targetAmount: 530000000,
+              targetDate: '2041-02',
+              monthlySaving: 500000,
+            },
+            aiGuide: null,
+          },
+        ],
       },
       {
         type: 'PREFERENCE_DATE_FIXED',
@@ -396,13 +391,48 @@ export function buildMockRecommendationResult() {
           targetDate: '2031-08',
           monthlySaving: 5200000,
         },
-        loanO: {
-          loanAmount: 80000000,
-          targetAmount: 570000000,
-          targetDate: '2031-08',
-          monthlySaving: 3900000,
-          shortenedMonths: 0,
-        },
+        loans: [
+          {
+            policyId: 'beotimmok-jeonse',
+            productName: '청년전용 버팀목전세자금대출',
+            eligible: true,
+            ineligibleReason: null,
+            plan: {
+              loanAmount: 80000000,
+              targetAmount: 570000000,
+              targetDate: '2031-08',
+              monthlySaving: 3900000,
+            },
+            aiGuide:
+              '이 대출은 혼인 여부에 따라 한도가 달라질 수 있어요. 실제 신청 전 취급 은행에서 직접 확인해보세요.',
+          },
+          {
+            policyId: 'didimdol-jeonse',
+            productName: '디딤돌 전세대출',
+            eligible: true,
+            ineligibleReason: null,
+            plan: {
+              loanAmount: 100000000,
+              targetAmount: 550000000,
+              targetDate: '2031-08',
+              monthlySaving: 3600000,
+            },
+            aiGuide: '이 대출은 생애최초 주택 구입 여부에 따라 한도가 달라질 수 있어요.',
+          },
+          {
+            policyId: 'bank-general-jeonse',
+            productName: '은행 일반 전세자금대출',
+            eligible: true,
+            ineligibleReason: null,
+            plan: {
+              loanAmount: 60000000,
+              targetAmount: 590000000,
+              targetDate: '2031-08',
+              monthlySaving: 4500000,
+            },
+            aiGuide: null,
+          },
+        ],
       },
       {
         type: 'REALISTIC',
@@ -424,13 +454,37 @@ export function buildMockRecommendationResult() {
           targetDate: '2028-08',
           monthlySaving: 0,
         },
-        loanO: {
-          loanAmount: 70000000,
-          targetAmount: 115000000,
-          targetDate: '2027-02',
-          monthlySaving: 0,
-          shortenedMonths: 18,
-        },
+        loans: [
+          {
+            policyId: 'beotimmok-jeonse',
+            productName: '청년전용 버팀목전세자금대출',
+            eligible: false,
+            ineligibleReason: '세대주가 아니어서 이 대출 대상에 해당하지 않아요.',
+            plan: null,
+            aiGuide: null,
+          },
+          {
+            policyId: 'didimdol-jeonse',
+            productName: '디딤돌 전세대출',
+            eligible: false,
+            ineligibleReason: '디딤돌 전세대출은 무주택 세대주만 신청할 수 있어요.',
+            plan: null,
+            aiGuide: null,
+          },
+          {
+            policyId: 'bank-general-jeonse',
+            productName: '은행 일반 전세자금대출',
+            eligible: true,
+            ineligibleReason: null,
+            plan: {
+              loanAmount: 70000000,
+              targetAmount: 115000000,
+              targetDate: '2027-02',
+              monthlySaving: 0,
+            },
+            aiGuide: null,
+          },
+        ],
       },
       {
         type: 'HOLD_OUT',
@@ -452,13 +506,48 @@ export function buildMockRecommendationResult() {
           targetDate: '2030-08',
           monthlySaving: 500000,
         },
-        loanO: {
-          loanAmount: 80000000,
-          targetAmount: 200000000,
-          targetDate: '2028-10',
-          monthlySaving: 500000,
-          shortenedMonths: 22,
-        },
+        loans: [
+          {
+            policyId: 'beotimmok-jeonse',
+            productName: '청년전용 버팀목전세자금대출',
+            eligible: true,
+            ineligibleReason: null,
+            plan: {
+              loanAmount: 80000000,
+              targetAmount: 200000000,
+              targetDate: '2028-10',
+              monthlySaving: 500000,
+            },
+            aiGuide:
+              '이 대출은 혼인 여부에 따라 한도가 달라질 수 있어요. 실제 신청 전 취급 은행에서 직접 확인해보세요.',
+          },
+          {
+            policyId: 'didimdol-jeonse',
+            productName: '디딤돌 전세대출',
+            eligible: true,
+            ineligibleReason: null,
+            plan: {
+              loanAmount: 90000000,
+              targetAmount: 190000000,
+              targetDate: '2028-06',
+              monthlySaving: 500000,
+            },
+            aiGuide: '이 대출은 생애최초 주택 구입 여부에 따라 한도가 달라질 수 있어요.',
+          },
+          {
+            policyId: 'bank-general-jeonse',
+            productName: '은행 일반 전세자금대출',
+            eligible: true,
+            ineligibleReason: null,
+            plan: {
+              loanAmount: 50000000,
+              targetAmount: 230000000,
+              targetDate: '2029-04',
+              monthlySaving: 500000,
+            },
+            aiGuide: null,
+          },
+        ],
       },
     ],
   }

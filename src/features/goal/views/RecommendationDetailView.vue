@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 import AppHeader from '@/shared/components/molecules/AppHeader.vue'
@@ -9,71 +9,210 @@ import BaseEmptyState from '@/shared/components/atoms/feedback/BaseEmptyState.vu
 
 import RecommendationHousingCard from '@/features/goal/components/RecommendationHousingCard.vue'
 import RecommendationCompareCard from '@/features/goal/components/RecommendationCompareCard.vue'
-import RecommendationFundingCard from '@/features/goal/components/RecommendationFundingCard.vue'
+import RecommendationLoanTabs from '@/features/goal/components/RecommendationLoanTabs.vue'
+import RecommendationLoanCard from '@/features/goal/components/RecommendationLoanCard.vue'
 import GoalConfirmModal from '@/features/goal/components/GoalConfirmModal.vue'
 import { useGoalStore } from '@/features/goal/store/goalStore'
 import {
   RECOMMENDATION_TITLE_MAP,
   toRecommendationDescription,
   toCompareCardViewModel,
+  toLoanCardsViewModel,
+  toOrderedRecommendationList,
   toGoalCreationPayload,
 } from '@/features/goal/utils/recommendationViewModel'
 
-const RESULT_ROUTE_NAME = 'goal-recommendations'
-
-const props = defineProps({
-  type: { type: String, required: true },
-})
+const SWIPE_THRESHOLD_PX = 40
+const DRAG_START_THRESHOLD_PX = 4
+const TRACK_GAP_PX = 8
 
 const router = useRouter()
 const goalStore = useGoalStore()
 const isConfirmOpen = ref(false)
 
-// 목록 화면에서 방금 눌러 들어온 정상 흐름이면 store에 이미 있어 바로 렌더링된다.
-// 새로고침/직접 진입이라 store가 비어 있으면 onMounted에서 다시 불러온다.
-const recommendation = computed(
-  () => goalStore.recommendations.find((item) => item.type === props.type) ?? null,
+const orderedList = computed(() => toOrderedRecommendationList(goalStore.recommendations))
+const hasAnyRecommendation = computed(() => orderedList.value.length > 0)
+
+const currentIndex = ref(0)
+const safeIndex = computed(() =>
+  Math.min(currentIndex.value, Math.max(orderedList.value.length - 1, 0)),
 )
+const total = computed(() => orderedList.value.length)
 
-const title = computed(() => RECOMMENDATION_TITLE_MAP[props.type] ?? recommendation.value?.title)
-const description = computed(() => toRecommendationDescription(recommendation.value))
-
-// PREFERENCE_SAVING_FIXED/PREFERENCE_DATE_FIXED/HOLD_OUT만 "핵심 카드"가 있다. REALISTIC은
-// 추천된 주거 조건 자체가 핵심 결과라 이 카드를 따로 두지 않는다(null이면 화면에서 자동으로
-// 빠진다). HOLD_OUT은 같은 응답 안의 REALISTIC과 비교해야 해서 전체 목록도 함께 넘긴다.
-const compareView = computed(() =>
-  toCompareCardViewModel(recommendation.value, goalStore.recommendations),
+const slides = computed(() =>
+  orderedList.value.map((rec) => ({
+    type: rec.type,
+    recommendation: rec,
+    title: RECOMMENDATION_TITLE_MAP[rec.type] ?? rec.title,
+    description: toRecommendationDescription(rec),
+    compareView: toCompareCardViewModel(rec, goalStore.recommendations),
+    loanCards: toLoanCardsViewModel(rec),
+  })),
 )
+const currentSlide = computed(() => slides.value[safeIndex.value] ?? null)
+const recommendation = computed(() => currentSlide.value?.recommendation ?? null)
 
-onMounted(() => {
-  if (!recommendation.value) goalStore.loadRecommendationResult()
+const loopSlides = computed(() => {
+  const list = slides.value
+  if (list.length <= 1) return list
+  return [
+    { ...list[list.length - 1], key: `${list[list.length - 1].type}__loop-start` },
+    ...list,
+    { ...list[0], key: `${list[0].type}__loop-end` },
+  ]
 })
 
-// 실제 저장은 여기서 바로 하지 않고, 어떤 값이 저장되는지 확인 + 대출 없이/활용 최종
-// 선택을 하는 팝업을 먼저 연다. 저장 자체는 팝업의 "목표 설정하기"에서 호출한다.
+const slideElements = new Map()
+function setSlideRef(el, type) {
+  if (el) slideElements.set(type, el)
+  else slideElements.delete(type)
+}
+
+const trackHeight = ref(null)
+function syncTrackHeight() {
+  const el = currentSlide.value && slideElements.get(currentSlide.value.type)
+  if (el) trackHeight.value = el.offsetHeight
+}
+
+watch(safeIndex, syncTrackHeight)
+watch(slides, async () => {
+  await nextTick()
+  syncTrackHeight()
+})
+
+const selectedLoanIndexByType = reactive({})
+function selectedLoanIndexFor(type) {
+  return selectedLoanIndexByType[type] ?? 0
+}
+const selectedLoan = computed(() => {
+  if (!currentSlide.value) return null
+  return currentSlide.value.loanCards[selectedLoanIndexFor(currentSlide.value.type)] ?? null
+})
+
+onMounted(async () => {
+  await goalStore.loadRecommendationResult()
+})
+
 function handleSetAsGoal() {
   isConfirmOpen.value = true
 }
 
-async function confirmAndSaveGoal(planKey) {
-  const plan = recommendation.value[planKey]
+async function confirmAndSaveGoal(plan) {
   const saved = await goalStore.saveGoal(toGoalCreationPayload(recommendation.value, plan))
   if (!saved) return
   isConfirmOpen.value = false
   router.push({ name: 'home' })
 }
 
-function goToRecommendations() {
-  router.push({ name: RESULT_ROUTE_NAME })
+function goToDiagnosis() {
+  router.replace({ name: 'diagnosis', state: { fromDiagnosisResult: true } })
+}
+
+let pointerStartX = 0
+let pointerStartY = 0
+let isPointerDown = false
+let suppressNextClick = false
+
+const isDragging = ref(false)
+const isSnapping = ref(false)
+const dragOffset = ref(0)
+
+const trackPosition = ref(0)
+watch(
+  slides,
+  async (list) => {
+    await nextTick()
+    trackPosition.value = list.length > 1 ? safeIndex.value + 1 : safeIndex.value
+  },
+  { immediate: true },
+)
+
+const trackStyle = computed(() => ({
+  transform: `translateX(calc(${-trackPosition.value} * (100% + ${TRACK_GAP_PX}px) + ${dragOffset.value}px))`,
+}))
+
+function handlePointerDown(event) {
+  isPointerDown = true
+  pointerStartX = event.clientX
+  pointerStartY = event.clientY
+}
+
+function handlePointerMove(event) {
+  if (!isPointerDown) return
+  const deltaX = event.clientX - pointerStartX
+  const deltaY = event.clientY - pointerStartY
+
+  if (!isDragging.value) {
+    if (Math.abs(deltaX) < DRAG_START_THRESHOLD_PX || Math.abs(deltaX) < Math.abs(deltaY)) return
+    isDragging.value = true
+  }
+
+  dragOffset.value = deltaX
+}
+
+function handlePointerUp(event) {
+  if (!isPointerDown) return
+  isPointerDown = false
+  if (!isDragging.value) return
+  isDragging.value = false
+
+  const deltaX = event.clientX - pointerStartX
+  const moved = Math.abs(deltaX) >= SWIPE_THRESHOLD_PX && goToOffset(deltaX < 0 ? 1 : -1)
+  if (moved) suppressNextClick = true
+  dragOffset.value = 0
+}
+
+function handlePointerCancel() {
+  isPointerDown = false
+  isDragging.value = false
+  dragOffset.value = 0
+}
+
+function suppressClickAfterSwipe(event) {
+  if (!suppressNextClick) return
+  suppressNextClick = false
+  event.stopPropagation()
+  event.preventDefault()
+}
+
+function goToOffset(offset) {
+  const length = orderedList.value.length
+  if (length <= 1) return false
+
+  const rawNext = safeIndex.value + offset
+  const wrapping = rawNext < 0 || rawNext >= length
+  const nextIndex = (rawNext + length) % length
+
+  trackPosition.value = wrapping ? (offset > 0 ? length + 1 : 0) : nextIndex + 1
+  currentIndex.value = nextIndex
+  return true
+}
+
+function handleTrackTransitionEnd(event) {
+  if (event.target !== event.currentTarget || event.propertyName !== 'transform') return
+
+  const length = orderedList.value.length
+  let snapTo = null
+  if (trackPosition.value === length + 1) snapTo = 1
+  else if (trackPosition.value === 0) snapTo = length
+
+  if (snapTo === null) return
+  isSnapping.value = true
+  trackPosition.value = snapTo
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      isSnapping.value = false
+    })
+  })
 }
 </script>
 
 <template>
   <div
     class="recommendation-detail-view"
-    :class="{ 'recommendation-detail-view--animated': recommendation }"
+    :class="{ 'recommendation-detail-view--animated': hasAnyRecommendation }"
   >
-    <AppHeader @back="router.back()" />
+    <AppHeader title="진단 결과" :show-back="false" />
 
     <div v-if="goalStore.isRecommending" class="recommendation-detail-view__skeleton">
       <BaseSkeleton height="56px" radius="16px" />
@@ -87,48 +226,108 @@ function goToRecommendations() {
       <BaseButton size="lg" @click="goalStore.loadRecommendationResult">다시 시도</BaseButton>
     </div>
 
-    <div v-else-if="!recommendation" class="recommendation-detail-view__state">
-      <BaseEmptyState message="계획을 찾을 수 없어요." />
-      <BaseButton size="lg" @click="router.back()">진단 결과로 돌아가기</BaseButton>
+    <div v-else-if="!hasAnyRecommendation" class="recommendation-detail-view__state">
+      <BaseEmptyState message="조건에 맞는 계획을 찾지 못했어요." />
+      <BaseButton variant="secondary" size="lg" @click="goToDiagnosis">다시 진단하기</BaseButton>
     </div>
 
     <template v-else>
-      <div class="recommendation-detail-view__intro">
-        <h2 class="recommendation-detail-view__title">{{ title }}</h2>
-        <p class="recommendation-detail-view__description">{{ description }}</p>
+      <div v-if="total > 1" class="recommendation-detail-view__carousel-head">
+        <div class="recommendation-detail-view__dots">
+          <span
+            v-for="(item, index) in orderedList"
+            :key="item.type"
+            class="recommendation-detail-view__dot"
+            :class="{ 'recommendation-detail-view__dot--active': index === safeIndex }"
+          />
+        </div>
+        <p class="recommendation-detail-view__carousel-hint">
+          <strong>{{ safeIndex + 1 }} / {{ total }}</strong> · 옆으로 넘기면 다른 방법도 볼 수
+          있어요
+        </p>
       </div>
 
-      <div class="recommendation-detail-view__cards">
-        <RecommendationHousingCard
-          :condition="recommendation.condition"
-          :target-date="recommendation.loanX.targetDate"
-        />
-        <RecommendationCompareCard
-          v-if="compareView"
-          :title="compareView.title"
-          :rows="compareView.rows"
-        />
-        <RecommendationFundingCard
-          :loan-x="recommendation.loanX"
-          :loan-o="recommendation.loanO"
-          :type="recommendation.type"
-        />
+      <div
+        class="recommendation-detail-view__swipe-area"
+        :style="{ height: trackHeight ? `${trackHeight}px` : undefined }"
+        @pointerdown="handlePointerDown"
+        @pointermove="handlePointerMove"
+        @pointerup="handlePointerUp"
+        @pointercancel="handlePointerCancel"
+        @click.capture="suppressClickAfterSwipe"
+      >
+        <div
+          class="recommendation-detail-view__track"
+          :class="{ 'recommendation-detail-view__track--dragging': isDragging || isSnapping }"
+          :style="trackStyle"
+          @transitionend="handleTrackTransitionEnd"
+        >
+          <div
+            v-for="slide in loopSlides"
+            :key="slide.key ?? slide.type"
+            :ref="(el) => !slide.key && setSlideRef(el, slide.type)"
+            class="recommendation-detail-view__slide"
+            :class="{
+              'recommendation-detail-view__slide--active': slide.type === currentSlide?.type,
+            }"
+          >
+            <div class="recommendation-detail-view__card-intro">
+              <h2 class="recommendation-detail-view__title">{{ slide.title }}</h2>
+              <p class="recommendation-detail-view__description">{{ slide.description }}</p>
+            </div>
+
+            <div class="recommendation-detail-view__cards">
+              <RecommendationHousingCard
+                :condition="slide.recommendation.condition"
+                :target-date="slide.recommendation.loanX.targetDate"
+              />
+              <RecommendationCompareCard
+                v-if="slide.compareView"
+                :title="slide.compareView.title"
+                :rows="slide.compareView.rows"
+              />
+
+              <template v-if="slide.loanCards.length > 0">
+                <p class="recommendation-detail-view__section-title">
+                  이 목표에 활용할 수 있는 대출
+                </p>
+                <RecommendationLoanTabs
+                  :model-value="selectedLoanIndexFor(slide.type)"
+                  :loans="slide.loanCards"
+                  @update:model-value="(index) => (selectedLoanIndexByType[slide.type] = index)"
+                />
+                <RecommendationLoanCard
+                  v-if="slide.loanCards[selectedLoanIndexFor(slide.type)]"
+                  :loan="slide.loanCards[selectedLoanIndexFor(slide.type)]"
+                />
+              </template>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div class="recommendation-detail-view__footer">
+      <div
+        class="recommendation-detail-view__footer"
+        @pointerdown="handlePointerDown"
+        @pointermove="handlePointerMove"
+        @pointerup="handlePointerUp"
+        @pointercancel="handlePointerCancel"
+        @click.capture="suppressClickAfterSwipe"
+      >
         <BaseButton size="lg" @click="handleSetAsGoal"> 이 계획으로 목표 설정하기 </BaseButton>
         <button
           type="button"
-          class="recommendation-detail-view__compare"
-          @click="goToRecommendations"
+          class="recommendation-detail-view__diagnose-again"
+          @click="goToDiagnosis"
         >
-          다른 계획 비교하기
+          다시 진단하기
         </button>
       </div>
 
       <GoalConfirmModal
         v-model="isConfirmOpen"
         :recommendation="recommendation"
+        :selected-loan="selectedLoan"
         :is-saving="goalStore.isSaving"
         :save-error="goalStore.saveError"
         @confirm="confirmAndSaveGoal"
@@ -142,8 +341,6 @@ function goToRecommendations() {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  /* 하단 CTA(__footer)가 fixed라 문서 흐름에서 빠지므로, 마지막 카드가 CTA에 가려지지
-     않도록 그 높이(버튼 53px + 텍스트 액션 + 상하 패딩)만큼 여유를 미리 확보해둔다. */
   padding-bottom: 140px;
 }
 
@@ -161,19 +358,92 @@ function goToRecommendations() {
   padding-top: 16px;
 }
 
-.recommendation-detail-view__intro {
+.recommendation-detail-view__carousel-head {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 8px;
-  margin: 8px 0 4px;
+}
+
+.recommendation-detail-view__dots {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.recommendation-detail-view__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--color-border, #262626);
+}
+
+.recommendation-detail-view__dot--active {
+  width: 18px;
+  background: var(--color-primary, #1d6b3f);
+}
+
+.recommendation-detail-view__carousel-hint {
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--color-text-tertiary, #6f766d);
+}
+
+.recommendation-detail-view__carousel-hint strong {
+  color: var(--color-text-secondary, #9aa09a);
+  font-weight: 700;
+}
+
+.recommendation-detail-view__swipe-area {
+  overflow: hidden;
+  touch-action: pan-y;
+  transition: height 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+  padding: 0 32px;
+}
+
+.recommendation-detail-view__track {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.recommendation-detail-view__track--dragging {
+  transition: none;
+}
+
+.recommendation-detail-view__slide {
+  flex: 0 0 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  opacity: 0.55;
+  transform: scale(0.94);
+  transition:
+    opacity 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+}
+
+.recommendation-detail-view__slide--active {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+}
+
+.recommendation-detail-view__card-intro {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .recommendation-detail-view__title {
   margin: 0;
-  font-size: 24px;
-  font-weight: 700;
-  line-height: 1.4;
-  letter-spacing: -0.5px;
+  font-size: 23px;
+  font-weight: 800;
+  line-height: 1.35;
+  letter-spacing: -0.4px;
   color: var(--color-text-primary, #ffffff);
 }
 
@@ -190,13 +460,13 @@ function goToRecommendations() {
   gap: 16px;
 }
 
-/*
-  이 화면은 카드가 여러 개라 뷰포트보다 콘텐츠가 길어질 수 있다. position:sticky는 그 경우
-  아직 스크롤하지 않은 카드 중간 위에 CTA가 얹혀 겹쳐 보인다(스크롤 컨테이너가 body 전체라
-  "끝까지 스크롤해야 자연스럽게 마지막에 붙는" sticky 특유의 여유 공간이 없기 때문).
-  하단 탭바(.mobile-layout__nav)와 같은 방식으로 position:fixed + 같은 폭 계산을 써서
-  화면 어디를 보고 있든 항상 같은 자리에 고정한다.
-*/
+.recommendation-detail-view__section-title {
+  margin: 4px 0 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text-secondary, #9aa09a);
+}
+
 .recommendation-detail-view__footer {
   position: fixed;
   left: 50%;
@@ -211,10 +481,21 @@ function goToRecommendations() {
   padding: 12px 0 calc(12px + env(safe-area-inset-bottom, 0px));
   background: var(--color-app-bg, #111111);
   transform: translateX(-50%);
+  touch-action: pan-y;
 }
 
-/* 주 CTA(BaseButton)와 위계가 확실히 구분되도록, 배경 없는 텍스트 액션으로만 둔다. */
-.recommendation-detail-view__compare {
+.recommendation-detail-view__footer::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 100%;
+  height: 28px;
+  background: linear-gradient(to bottom, transparent, var(--color-app-bg, #111111));
+  pointer-events: none;
+}
+
+.recommendation-detail-view__diagnose-again {
   border: 0;
   padding: 4px;
   background: none;
@@ -225,13 +506,6 @@ function goToRecommendations() {
   cursor: pointer;
 }
 
-/*
-  홈/비교/목표 상세 화면과 같은 card-rise 진입 모션(main.css에 공용 정의)을 재사용한다.
-  로딩/에러/찾을 수 없음 상태에는 적용하지 않고, recommendation을 실제로 찾은 뒤에만
-  (v-else 분기) 애니메이션이 실행되게 게이트를 건다(GoalDetailView의 `detail` 게이트와 동일).
-  __footer는 제외한다 — card-rise가 쓰는 transform(translateY)이 footer 자신의 가운데 정렬용
-  transform(translateX(-50%))을 덮어써서 애니메이션이 끝난 뒤에도 정렬이 깨진 채로 남는다.
-*/
 .recommendation-detail-view--animated > *:not(.recommendation-detail-view__footer) {
   animation: card-rise 0.35s ease-out both;
 }
@@ -244,11 +518,11 @@ function goToRecommendations() {
   animation-delay: 0.12s;
 }
 
-.recommendation-detail-view--animated > *:nth-child(4) {
-  animation-delay: 0.18s;
-}
-
-.recommendation-detail-view--animated > *:nth-child(5) {
-  animation-delay: 0.24s;
+@media (prefers-reduced-motion: reduce) {
+  .recommendation-detail-view__track,
+  .recommendation-detail-view__swipe-area,
+  .recommendation-detail-view__slide {
+    transition: none;
+  }
 }
 </style>

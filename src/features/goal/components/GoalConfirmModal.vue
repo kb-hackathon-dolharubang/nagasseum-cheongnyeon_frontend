@@ -9,36 +9,31 @@ import { toConditionSummary } from '@/features/goal/utils/recommendationViewMode
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
-  // recommendation 원본 그대로(condition/loanX/loanO). type별로 팝업을 따로 만들지 않고
-  // 이 컴포넌트 하나가 네 type(PREFERENCE_SAVING_FIXED/PREFERENCE_DATE_FIXED/REALISTIC/
-  // HOLD_OUT) 전부를 공통으로 그린다.
   recommendation: { type: Object, default: null },
+  selectedLoan: { type: Object, default: null },
   isSaving: { type: Boolean, default: false },
   saveError: { type: Object, default: null },
 })
 
 const emit = defineEmits(['update:modelValue', 'confirm'])
 
-const LOAN_X = 'loanX'
-const LOAN_O = 'loanO'
-
-const selectedPlan = ref(LOAN_X)
+const selectedPlan = ref('loanX')
 
 // 다시 열 때마다 "대출 없이"로 초기화한다 — 이전에 어떤 걸 보고 있었는지와 무관하게
 // 항상 같은 기본값에서 시작해야 매번 같은 흐름으로 확인할 수 있다.
 watch(
   () => props.modelValue,
   (isOpen) => {
-    if (isOpen) selectedPlan.value = LOAN_X
+    if (isOpen) selectedPlan.value = 'loanX'
   },
 )
 
-const hasLoanOption = computed(() => props.recommendation?.loanO != null)
-const isLoanOActive = computed(() => hasLoanOption.value && selectedPlan.value === LOAN_O)
+const hasLoanOption = computed(() => props.selectedLoan?.eligible === true)
+const isLoanActive = computed(() => hasLoanOption.value && selectedPlan.value === 'loan')
 
 const activePlan = computed(() => {
   if (!props.recommendation) return null
-  return isLoanOActive.value ? props.recommendation.loanO : props.recommendation.loanX
+  return isLoanActive.value ? props.selectedLoan.plan : props.recommendation.loanX
 })
 
 const conditionSummary = computed(() =>
@@ -54,7 +49,7 @@ function close() {
 }
 
 function confirm() {
-  emit('confirm', isLoanOActive.value ? LOAN_O : LOAN_X)
+  emit('confirm', activePlan.value)
 }
 </script>
 
@@ -68,15 +63,13 @@ function confirm() {
     <template v-if="recommendation">
       <p class="goal-confirm-modal__subtitle">저장할 계획의 내용을 확인해주세요.</p>
 
-      <!-- loanO가 없는 recommendation(대출 활용 플랜 자체가 없음)은 탭을 보여주지 않고
-           loanX 저장값만 그대로 보여준다. -->
       <div v-if="hasLoanOption" class="goal-confirm-modal__tabs" role="tablist">
         <button
           type="button"
           role="tab"
           class="goal-confirm-modal__tab"
-          :class="{ 'goal-confirm-modal__tab--active': !isLoanOActive }"
-          :aria-selected="!isLoanOActive"
+          :class="{ 'goal-confirm-modal__tab--active': !isLoanActive }"
+          :aria-selected="!isLoanActive"
           @click="selectPlan('loanX')"
         >
           대출 없이
@@ -85,11 +78,11 @@ function confirm() {
           type="button"
           role="tab"
           class="goal-confirm-modal__tab"
-          :class="{ 'goal-confirm-modal__tab--active': isLoanOActive }"
-          :aria-selected="isLoanOActive"
-          @click="selectPlan('loanO')"
+          :class="{ 'goal-confirm-modal__tab--active': isLoanActive }"
+          :aria-selected="isLoanActive"
+          @click="selectPlan('loan')"
         >
-          대출 활용
+          {{ selectedLoan.productName }}
         </button>
       </div>
 
@@ -116,7 +109,7 @@ function confirm() {
           formatYearMonth(activePlan.targetDate)
         }}</strong>
       </div>
-      <div v-if="isLoanOActive" class="goal-confirm-modal__row">
+      <div v-if="isLoanActive" class="goal-confirm-modal__row">
         <span class="goal-confirm-modal__row-label">예상 대출 금액</span>
         <strong class="goal-confirm-modal__row-value">{{
           formatGoalAmount(activePlan.loanAmount)
@@ -150,11 +143,6 @@ function confirm() {
 </template>
 
 <style scoped>
-/*
-  BaseModal이 Teleport로 body에 렌더링돼 조상 기반 :deep()이 안 먹으므로, BaseModal 루트에
-  직접 클래스를 붙여 plain scoped 선택자로 폭만 살짝 넓힌다(다른 modal 화면과 같은 패턴).
-  세그먼트 탭 + 여러 행이 들어가 기본 320px보다 조금 더 넉넉해야 한 줄에 잘 들어간다.
-*/
 .goal-confirm-modal {
   width: 90vw;
   max-width: 340px;
@@ -167,11 +155,6 @@ function confirm() {
   text-align: center;
 }
 
-/*
-  비교 화면의 "자산 비교 | 목표 비교" 세그먼트(CompareTabs.vue)와 같은 구조·수치를
-  그대로 재사용한다. 그 컴포넌트는 CompareView 전용 로컬 톤(--c-*)에 묶여 있어 이 화면
-  에서는 같은 값으로 귀결되는 전역 테마 토큰으로 다시 매핑한다.
-*/
 .goal-confirm-modal__tabs {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -258,8 +241,6 @@ function confirm() {
 }
 
 .goal-confirm-modal__btn {
-  /* BaseButton lg 기본 높이(51px)보다 살짝 낮춰, 팝업 안에서 다른 행들과 비교해 버튼이
-     지나치게 커 보이지 않게 한다 — Compact 톤(46px)과 같은 값. */
   height: 46px;
   flex: 1;
 }
