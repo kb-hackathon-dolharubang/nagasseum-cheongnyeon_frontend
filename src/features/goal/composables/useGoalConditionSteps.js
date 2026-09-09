@@ -11,8 +11,8 @@ export const PROPERTY_TYPE_OPTIONS = [
   { label: '단독·다가구', value: 'DETACHED' },
 ]
 
-// 매매(PURCHASE)는 백엔드가 전월세 실거래만 수집하고 있어 지원하지 않는다.
 export const TRADE_TYPE_OPTIONS = [
+  { label: '매매', value: 'TRADE' },
   { label: '전세', value: 'JEONSE' },
   { label: '월세', value: 'WOLSE' },
 ]
@@ -40,11 +40,14 @@ export function useGoalConditionSteps() {
   const form = reactive({
     // 시군구 5자리(예: 11440 마포구) 또는 시도 2자리(예: 11 서울). 유일한 필수 조건이다.
     regionCode: null,
+    // 읍면동 10자리(예: 1144010100). 구·군을 고른 뒤 동을 추가로 좁힐 때만 채워진다.
+    dongCode: null,
     propertyType: null,
     tradeType: null,
     // 범위형 입력은 슬라이더가 항상 어떤 값을 들고 있어야 해서 기본 범위를 미리 채워둔다.
     // 이 값이 실제로 전송될지는 answered가 결정한다.
     deposit: { min: 100000000, max: 300000000 },
+    tradePrice: { min: 500000000, max: 2000000000 },
     monthlyRent: { min: 300000, max: 800000 },
     size: { min: 10, max: 20 },
     targetDate: '', // BaseYearMonthSelect가 마운트 시 다음 달로 자동 보정한다
@@ -61,11 +64,13 @@ export function useGoalConditionSteps() {
     propertyType: false,
     tradeType: false,
     deposit: false,
+    tradePrice: false,
     size: false,
     targetDate: false,
   })
 
   const isWolse = computed(() => form.tradeType === 'WOLSE')
+  const isTrade = computed(() => form.tradeType === 'TRADE')
 
   // 각 단계의 질문/설명은 화면이 아니라 여기 모아둔다 — 순서와 문구를 한자리에서 보기 위함.
   const steps = computed(() => {
@@ -87,11 +92,26 @@ export function useGoalConditionSteps() {
       {
         key: 'tradeType',
         kind: 'choice',
-        title: '전세와 월세 중\n어느 쪽인가요?',
-        description: '매매는 아직 지원하지 않아요. 건너뛰면 두 유형을 모두 살펴봅니다.',
+        title: '어떤 거래 유형을\n생각하고 있나요?',
+        description: '건너뛰면 모든 유형을 놓고 찾아드릴게요.',
         options: TRADE_TYPE_OPTIONS,
       },
-      {
+    ]
+
+    if (isTrade.value) {
+      list.push({
+        key: 'tradePrice',
+        kind: 'range',
+        title: '희망 매매가는\n어느 정도인가요?',
+        description: '목표로 삼고 싶은 금액대를 골라주세요.',
+        field: 'tradePrice',
+        min: 0,
+        max: 5000000000,
+        step: 100000000,
+        formatValue: formatEok,
+      })
+    } else {
+      list.push({
         key: 'deposit',
         kind: 'range',
         title: '보증금은 얼마까지\n생각하세요?',
@@ -101,8 +121,8 @@ export function useGoalConditionSteps() {
         max: 1000000000,
         step: 10000000,
         formatValue: formatEok,
-      },
-    ]
+      })
+    }
 
     // 월세를 골랐다면 월세 범위는 반드시 받아야 한다. 백엔드가 tradeType이 WOLSE인데
     // monthlyRentMax가 없으면 400으로 거절한다(GoalRecommendationRequest#isMonthlyRentRequiredForWolse).
@@ -246,6 +266,7 @@ export function useGoalConditionSteps() {
     if (!goal) return
 
     form.regionCode = goal.regionCode ?? null
+    form.dongCode = goal.dongCode ?? null
 
     if (goal.propertyType) {
       form.propertyType = goal.propertyType
@@ -258,6 +279,10 @@ export function useGoalConditionSteps() {
     if (goal.depositMin != null && goal.depositMax != null) {
       form.deposit = { min: goal.depositMin, max: goal.depositMax }
       answered.deposit = true
+    }
+    if (goal.tradePriceMin != null && goal.tradePriceMax != null) {
+      form.tradePrice = { min: goal.tradePriceMin, max: goal.tradePriceMax }
+      answered.tradePrice = true
     }
     // 전세 목표는 서버가 월세를 0으로 정규화해 저장한다. 그대로 채우면 슬라이더가 0~0이 되어
     // 거래 유형을 월세로 바꿨을 때 범위를 처음부터 다시 잡아야 하므로 기본값을 남긴다.
@@ -284,12 +309,15 @@ export function useGoalConditionSteps() {
   function buildPayload() {
     return {
       regionCode: form.regionCode,
+      dongCode: form.dongCode ?? null,
       propertyType: answered.propertyType ? form.propertyType : null,
       tradeType: answered.tradeType ? form.tradeType : null,
       sizeMin: answered.size ? form.size.min : null,
       sizeMax: answered.size ? form.size.max : null,
-      depositMin: answered.deposit ? form.deposit.min : null,
-      depositMax: answered.deposit ? form.deposit.max : null,
+      depositMin: !isTrade.value && answered.deposit ? form.deposit.min : null,
+      depositMax: !isTrade.value && answered.deposit ? form.deposit.max : null,
+      tradePriceMin: isTrade.value && answered.tradePrice ? form.tradePrice.min : null,
+      tradePriceMax: isTrade.value && answered.tradePrice ? form.tradePrice.max : null,
       // 월세 범위는 거래 유형이 월세일 때만 의미가 있다. 전세로 되돌린 뒤에도 값이 남아
       // 함께 전송되면 백엔드가 쓸 수 없는 조건을 받게 되므로 여기서 잘라낸다.
       monthlyRentMin: isWolse.value ? form.monthlyRent.min : null,
