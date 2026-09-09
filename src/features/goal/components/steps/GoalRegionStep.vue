@@ -2,13 +2,16 @@
 import { computed, ref } from 'vue'
 
 import { SIDO_LIST, GUGUN_BY_SIDO } from '@/shared/constants/regions'
+import { DONG_BY_SIGUNGU } from '@/shared/constants/regionDongs'
 
 const props = defineProps({
   // 시군구 5자리(예: '11440') 또는 시도 2자리(예: '11'). 미선택이면 null.
   modelValue: { type: String, default: null },
+  // 읍면동 10자리(예: '1144010100'). 동을 고르지 않으면 null.
+  dongCode: { type: String, default: null },
 })
 
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue', 'update:dongCode'])
 
 /** 이미 고른 코드가 있으면(뒤로 왔을 때) 그 코드가 속한 시·도를 펼쳐둔다. */
 function resolveInitialSido(code) {
@@ -23,6 +26,16 @@ const gugunOptions = computed(() =>
   selectedSido.value ? (GUGUN_BY_SIDO[selectedSido.value] ?? []) : [],
 )
 
+// 구·군(5자리)이 선택된 상태일 때만 동 목록을 보여준다.
+const selectedGugunCode = computed(() => {
+  const v = props.modelValue
+  return v && v.length === 5 ? v : null
+})
+
+const dongOptions = computed(() =>
+  selectedGugunCode.value ? (DONG_BY_SIGUNGU[selectedGugunCode.value] ?? []) : [],
+)
+
 const selectedSidoName = computed(
   () => SIDO_LIST.find((sido) => sido.code === selectedSido.value)?.name ?? '',
 )
@@ -31,18 +44,26 @@ const selectedGugunName = computed(
   () => gugunOptions.value.find((gugun) => gugun.code === props.modelValue)?.name ?? '',
 )
 
+const selectedDongName = computed(
+  () => dongOptions.value.find((dong) => dong.code === props.dongCode)?.dongName ?? '',
+)
+
 // 시·도만 고른 상태. 백엔드는 2자리 코드를 받으면 그 시·도 안에서 알고리즘이 시군구를 판단한다.
 const isSidoOnly = computed(() => props.modelValue === selectedSido.value)
 
 function selectSido(code) {
   selectedSido.value = code
-  // 시·도를 바꾸면 이전 시·도의 구·군 선택은 더 이상 유효하지 않다. 일단 시·도 전체로 두고,
-  // 사용자가 구·군을 고르면 그때 좁힌다 — 이렇게 해야 시·도만 고르고도 바로 다음으로 넘어갈 수 있다.
   emit('update:modelValue', code)
+  emit('update:dongCode', null)
 }
 
 function selectGugun(code) {
   emit('update:modelValue', code)
+  emit('update:dongCode', null)
+}
+
+function selectDong(code) {
+  emit('update:dongCode', code)
 }
 </script>
 
@@ -96,11 +117,38 @@ function selectGugun(code) {
       </p>
     </div>
 
+    <div v-if="selectedGugunCode && dongOptions.length" class="goal-region-step__field">
+      <p class="goal-region-step__label">
+        읍 · 면 · 동 <span class="goal-region-step__optional">선택</span>
+      </p>
+      <div class="goal-region-step__chips">
+        <button
+          type="button"
+          class="goal-region-step__chip"
+          :class="{ 'goal-region-step__chip--active': !dongCode }"
+          @click="selectDong(null)"
+        >
+          {{ selectedGugunName }} 전체
+        </button>
+        <button
+          v-for="dong in dongOptions"
+          :key="dong.code"
+          type="button"
+          class="goal-region-step__chip"
+          :class="{ 'goal-region-step__chip--active': dong.code === dongCode }"
+          @click="selectDong(dong.code)"
+        >
+          {{ dong.dongName }}
+        </button>
+      </div>
+    </div>
+
     <p v-if="modelValue" class="goal-region-step__summary">
       <span class="goal-region-step__summary-name">
-        {{ selectedSidoName }}{{ selectedGugunName ? ` ${selectedGugunName}` : ' 전체' }}
+        {{ selectedSidoName }}{{ selectedGugunName ? ` ${selectedGugunName}` : ' 전체'
+        }}{{ selectedDongName ? ` ${selectedDongName}` : '' }}
       </span>
-      <span class="goal-region-step__summary-code">{{ modelValue }}</span>
+      <span class="goal-region-step__summary-code">{{ dongCode ?? modelValue }}</span>
     </p>
   </div>
 </template>
