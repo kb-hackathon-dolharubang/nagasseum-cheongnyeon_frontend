@@ -319,7 +319,7 @@ export const chatMessages = {
 // 상담사(COUNSELOR) 역할로 채팅 화면을 확인할 때 상단에 표시할 사용자 쪽 Mock 프로필.
 // 아직 회원 프로필 조회 API가 없어 데모 확인용으로만 최소 형태로 둔다.
 export const chatUserProfile = {
-  name: '김OO',
+  name: '김지우',
   image: '',
 }
 

@@ -7,7 +7,7 @@
 
 export const SEED_MEMBER = {
   id: 1,
-  nickname: '김OO',
+  nickname: '김지우',
   // 또래 비교(compare)의 코호트 연령대(ageRange)가 이 나이를 기준으로 잡힌다.
   age: 26,
   monthlyIncome: 3100000,
