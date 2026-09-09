@@ -7,7 +7,7 @@ import BaseBottomNav from '@/shared/components/atoms/navigation/BottomNav/BaseBo
 import {
   HomeIcon,
   PolicyIcon,
-  PolicyIcon as CompareIcon,
+  CompareIcon,
   ConsultIcon,
   MyIcon,
 } from '@/shared/components/atoms/navigation/BottomNav/icons'
@@ -15,10 +15,11 @@ import {
 const route = useRoute()
 const router = useRouter()
 
+// '홈'을 5개 중 가운데(3번째)로 배치한다. 스타일은 다른 탭과 동일.
 const navItems = [
-  { label: '홈', icon: HomeIcon, to: '/home' },
   { label: '정책', icon: PolicyIcon, to: '/policy' },
   { label: '비교', icon: CompareIcon, to: '/compare' },
+  { label: '홈', icon: HomeIcon, to: '/home' },
   { label: '상담', icon: ConsultIcon, to: '/consult' },
   { label: '마이', icon: MyIcon, to: '/my' },
 ]
@@ -44,11 +45,12 @@ const HIDDEN_NAV_ROUTE_NAMES = [
   // 상담사 홈은 사용자용 GNB(홈/정책/비교/상담/마이)와 무관한 별도 진입점이라, 같은
   // 정책으로 하단 탭을 숨긴다. 상담사 전용 GNB를 새로 만들지는 않는다.
   'counselor-home',
+  // 목표 상세는 다른 화면(홈 요약 카드 등)에서 들어오는 하위 화면이라 하단 탭을 숨긴다.
+  // 대신 AppHeader에 뒤로가기를 켜서 갇히지 않게 한다(GoalDetailView 참고).
+  'goal-detail',
 ]
 
-const activeIndex = computed(() =>
-  navItems.findIndex((item) => route.path.startsWith(item.to)),
-)
+const activeIndex = computed(() => navItems.findIndex((item) => route.path.startsWith(item.to)))
 const showNav = computed(() => route.path !== '/' && !HIDDEN_NAV_ROUTE_NAMES.includes(route.name))
 
 function handleTabChange(index) {

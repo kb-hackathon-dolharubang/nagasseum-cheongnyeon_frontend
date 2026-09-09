@@ -9,14 +9,6 @@ defineEmits(['update:modelValue'])
 
 <template>
   <nav class="bottom-nav">
-    <span
-      v-if="modelValue >= 0"
-      class="bottom-nav__indicator"
-      :style="{
-        width: `calc((100% - 12px) / ${items.length} - 12px)`,
-        left: `calc(5px + (100% - 12px) / ${items.length} * ${modelValue} + 6px)`,
-      }"
-    />
     <button
       v-for="(item, index) in items"
       :key="item.label"
@@ -48,18 +40,7 @@ defineEmits(['update:modelValue'])
   box-sizing: border-box;
 }
 
-.bottom-nav__indicator {
-  position: absolute;
-  top: 6px;
-  bottom: 6px;
-  border-radius: 20px;
-  background: var(--color-nav-active-bg, #e3ffe8);
-  transition: left 0.25s cubic-bezier(0.32, 0.72, 0, 1);
-}
-
 .bottom-nav__item {
-  position: relative;
-  z-index: 1;
   display: flex;
   flex: 1;
   flex-direction: column;
@@ -106,6 +87,26 @@ defineEmits(['update:modelValue'])
 .bottom-nav__icon :deep(svg) {
   width: 100%;
   height: 100%;
+}
+
+/* 배경 박스 대신, 활성 탭은 아이콘을 채워서(선 외곽선 -> 단색 실루엣) 표시한다.
+   글자색과 같은 색(currentColor)이라 별도 색상 지정 없이 .bottom-nav__item--active의
+   color만 따라간다. */
+.bottom-nav__item--active .bottom-nav__icon :deep(svg) {
+  fill: currentColor;
+}
+
+/* 아이콘 전체를 감싸는 겉 외곽선(예: 집 모양, 사각형 테두리)은 그대로 채움색과
+   같은 색으로 둬서 실루엣처럼 보이게 하고, 아이콘 "안쪽"의 디테일 선/점만 흰색으로
+   올려 도드라지게 한다 - icons.js에서 안쪽 요소에만 nav-icon-detail/nav-icon-dot
+   클래스를 붙여뒀다. 점은 stroke가 원래 없어서(기본값 none) stroke를 건드리면
+   얇은 흰 테두리가 생기므로 fill만 바꾼다. */
+.bottom-nav__item--active .bottom-nav__icon :deep(svg .nav-icon-detail) {
+  stroke: #ffffff;
+}
+
+.bottom-nav__item--active .bottom-nav__icon :deep(svg .nav-icon-dot) {
+  fill: #ffffff;
 }
 
 .bottom-nav__label {

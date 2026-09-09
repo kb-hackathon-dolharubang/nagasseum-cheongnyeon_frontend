@@ -110,7 +110,7 @@ async function confirmDeleteGoal() {
 
 <template>
   <div class="goal-detail-view" :class="{ 'goal-detail-view--animated': detail }">
-    <AppHeader title="목표 상세" :show-back="false">
+    <AppHeader title="목표 상세" @back="router.back()">
       <template #action>
         <button
           v-if="detail"
