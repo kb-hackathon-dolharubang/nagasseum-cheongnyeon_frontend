@@ -32,8 +32,9 @@ export const mockCompareGoalsSuccess = {
       ],
     },
     dealTypeDistribution: [
-      { dealType: 'JEONSE', label: '전세', ratio: 73.0, rank: 1 },
+      { dealType: 'JEONSE', label: '전세', ratio: 58.0, rank: 1 },
       { dealType: 'WOLSE', label: '월세', ratio: 27.0, rank: 2 },
+      { dealType: 'TRADE', label: '매매', ratio: 15.0, rank: 3 },
     ],
     averageTargetAmount: 240000000,
     averagePrepMonths: 14,
