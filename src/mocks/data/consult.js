@@ -103,23 +103,6 @@ export const mockConsultationReport = {
   result:
     '현재 조건을 유지하려면 월 저축액을 늘리거나 목표 시점을 조정하는 방향이 현실적이라는 결론을 확인했습니다.',
   recommendations: ['월 저축액 조정 검토', '목표 시점 조정 검토', '정책 대출 활용 가능 여부 확인'],
-  nextActions: [
-    {
-      title: '월 저축 계획을 조정해보세요',
-      description: '현재 저축액에서 상향 조정하는 방안을 검토해보세요.',
-      actionType: 'SAVING',
-    },
-    {
-      title: '목표 조건을 다시 확인해보세요',
-      description: '상담 결과를 반영해 목표 시점이나 주거 조건을 수정할 수 있습니다.',
-      actionType: 'GOAL',
-    },
-    {
-      title: '대출 가능 여부를 확인해보세요',
-      description: '현재 조건에서 활용 가능한 정책 대출이 있는지 확인해보세요.',
-      actionType: 'LOAN',
-    },
-  ],
 }
 
 export function getMockConsultationReport() {
