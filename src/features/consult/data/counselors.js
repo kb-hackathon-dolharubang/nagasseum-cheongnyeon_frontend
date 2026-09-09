@@ -1,3 +1,7 @@
+import counselor1 from '@/assets/images/counselor1.png'
+import counselor2 from '@/assets/images/counselor2.png'
+import counselor3 from '@/assets/images/counselor3.png'
+
 // 상담사 조회 API가 아직 없어 Mock 데이터를 그대로 화면에서 import해서 쓴다.
 // API가 생기면 이 배열 대신 consultApi 응답을 쓰도록 ConsultView만 바꾸면 된다.
 // categories는 상담 홈의 분야 칩(ConsultView CATEGORY_OPTIONS) 라벨과 같은 문자열을 써서
@@ -12,7 +16,7 @@ export const counselors = [
     consultationCount: 128,
     categories: ['목표 설정', '저축', '주거'],
     earliestAvailable: '9월 9일 14:00',
-    image: '',
+    image: counselor1,
   },
   {
     id: 2,
@@ -23,7 +27,7 @@ export const counselors = [
     consultationCount: 96,
     categories: ['주거', '대출', '자산 관리'],
     earliestAvailable: '9월 9일 16:00',
-    image: '',
+    image: counselor2,
   },
   {
     id: 3,
@@ -34,7 +38,7 @@ export const counselors = [
     consultationCount: 84,
     categories: ['자산 관리', '저축'],
     earliestAvailable: '9월 10일 10:00',
-    image: '',
+    image: counselor3,
   },
 ]
 
