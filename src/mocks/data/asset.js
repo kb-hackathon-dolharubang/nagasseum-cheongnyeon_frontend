@@ -20,7 +20,7 @@ export const mockOrganizationsResponse = {
       organizationName: '신한은행',
       businessType: 'BK',
       supportedLoginTypes: ['ID', 'CERTIFICATE'],
-      isConnected: false,
+      isConnected: true,
     },
     {
       organizationCode: '0020',
@@ -43,13 +43,22 @@ export const mockOrganizationsResponse = {
       supportedLoginTypes: ['ID', 'CERTIFICATE'],
       isConnected: false,
     },
+    // 한국장학재단은 은행이 아니지만 businessType에 BK/ST/CD 세 값밖에 없어(businessType.js)
+    // 계좌를 은행처럼 다루는 BK로 둔다. 코드도 아래 증권/카드와 같은 임의 코드다.
+    {
+      organizationCode: '3001',
+      organizationName: '한국장학재단',
+      businessType: 'BK',
+      supportedLoginTypes: ['ID', 'CERTIFICATE'],
+      isConnected: true,
+    },
     // 증권/카드는 실제 금융기관 표준코드가 아닌 로컬 테스트용 임의 코드다.
     {
       organizationCode: '1001',
       organizationName: '미래에셋증권',
       businessType: 'ST',
       supportedLoginTypes: ['ID', 'CERTIFICATE'],
-      isConnected: false,
+      isConnected: true,
     },
     {
       organizationCode: '1002',
@@ -90,6 +99,8 @@ export const mockOrganizationsResponse = {
   error: null,
 }
 
+// 페르소나가 이미 연동해 둔 기관. SEED_ASSET_INSTITUTIONS의 기관 4곳과 같아야
+// 자산 화면의 "연동된 기관"과 실제 계좌 목록이 어긋나지 않는다.
 export const mockConnectionsResponse = {
   success: true,
   data: [
@@ -98,6 +109,24 @@ export const mockConnectionsResponse = {
       organizationName: 'KB국민은행',
       businessType: 'BK',
       connectedAt: '2026-07-23T10:00:00',
+    },
+    {
+      organizationCode: '0088',
+      organizationName: '신한은행',
+      businessType: 'BK',
+      connectedAt: '2026-07-23T10:04:00',
+    },
+    {
+      organizationCode: '1001',
+      organizationName: '미래에셋증권',
+      businessType: 'ST',
+      connectedAt: '2026-07-23T10:09:00',
+    },
+    {
+      organizationCode: '3001',
+      organizationName: '한국장학재단',
+      businessType: 'BK',
+      connectedAt: '2026-07-23T10:12:00',
     },
   ],
   error: null,
@@ -214,7 +243,7 @@ export const mockAssetSummaryResponse = {
   loanBalance: SEED_ASSET_SUMMARY.loanBalance,
   netAssets: SEED_ASSET_SUMMARY.netAssets,
   monthlySavings: SEED_ASSET_SUMMARY.monthlySavings,
-  syncedAt: '2026-08-02T21:40:00+09:00',
+  syncedAt: '2026-09-08T21:40:00+09:00',
   assetBreakdown: {
     cashAssets: {
       total: SEED_ASSET_SUMMARY.cashAssetsTotal,
@@ -239,6 +268,8 @@ export const mockAssetSummaryNotFoundResponse = {
 
 // 노션 "[추가] 수동 자산" CRUD(POST/GET/PUT/DELETE /api/v1/assets/manual)가 다루는 목록.
 // assetType "DEPOSIT"은 계좌 목록 조회의 accountType과 이름은 같지만 의미가 다르다 (예: 현재 거주 보증금).
+// 이 목록의 금액은 mockAssetSummaryResponse.totalAssets에 더해지지 않는다 — 지금 사는 집에
+// 묶여 있어 목표에 쓸 수 없는 돈이라 자산 목록에만 보인다(seed.js의 totalAssets 주석 참고).
 // 핸들러가 실제로 값을 더하고 빼며 조작하므로 let으로 선언하고, 초기값은 SEED_MANUAL_ASSETS를
 // 복사해 시드 원본이 변형되지 않게 한다.
 export let mockManualAssetsResponse = [...SEED_MANUAL_ASSETS]
