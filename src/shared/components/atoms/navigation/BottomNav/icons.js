@@ -42,6 +42,19 @@ export const PolicyIcon = {
     ]),
 }
 
+export const CompareIcon = {
+  render: () =>
+    h('svg', { viewBox: '0 0 17 17', fill: 'none' }, [
+      h('circle', { cx: '8.5', cy: '8.5', r: '6', stroke: 'currentColor', 'stroke-width': '1.4' }),
+      h('path', {
+        d: 'M8.5 2.5V8.5L13.5 5',
+        stroke: 'currentColor',
+        'stroke-width': '1.4',
+        'stroke-linejoin': 'round',
+      }),
+    ]),
+}
+
 export const MyIcon = {
   render: () =>
     h('svg', { viewBox: '0 0 17 17', fill: 'none' }, [

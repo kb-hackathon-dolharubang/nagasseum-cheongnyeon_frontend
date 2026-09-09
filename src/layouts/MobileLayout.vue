@@ -7,7 +7,7 @@ import BaseBottomNav from '@/shared/components/atoms/navigation/BottomNav/BaseBo
 import {
   HomeIcon,
   PolicyIcon,
-  PolicyIcon as CompareIcon,
+  CompareIcon,
   ConsultIcon,
   MyIcon,
 } from '@/shared/components/atoms/navigation/BottomNav/icons'
