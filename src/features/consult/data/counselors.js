@@ -91,26 +91,13 @@ export const generalConsultInfo = {
   loanPreference: 'UNDECIDED',
 }
 
-// 가장 가까운 예정 상담 하나. 상담 목록 API가 생기면 이 자리를 그 응답으로 바꾸면 된다.
-export const myConsultation = {
-  reservationId: 1,
-  status: 'RESERVED',
-  counselorName: '김민지',
-  category: '목표 설정 상담',
-  date: '2026-09-09',
-  time: '14:00',
-}
-
-// 상담 홈의 "최근 진단한 목표"/"내 상담" 요약 카드가 데이터 있음 상태와 Empty State
-// 중 어느 쪽을 보여줄지 이 두 값으로 정한다. recentDiagnosisGoal은 상담 정보/상담
-// 리포트 화면(buildConsultInfo, ConsultationInfoCard)에서도 그대로 참조하고 있어
-// 값 자체를 지우면 그 화면들이 깨진다 - 그래서 원본은 그대로 두고, 상담 홈만 이
-// 플래그로 "있는 것으로 볼지"를 따로 가른다. Empty State를 확인하려면 아래 두 값을
-// false로 바꾸면 된다.
+// 상담 홈의 "최근 진단한 목표" 요약 카드가 데이터 있음 상태와 Empty State 중 어느
+// 쪽을 보여줄지 이 값으로 정한다. recentDiagnosisGoal은 상담 정보/상담 리포트
+// 화면(buildConsultInfo, ConsultationInfoCard)에서도 그대로 참조하고 있어 값 자체를
+// 지우면 그 화면들이 깨진다 - 그래서 원본은 그대로 두고, 상담 홈만 이 플래그로
+// "있는 것으로 볼지"를 따로 가른다. Empty State를 확인하려면 아래 값을 false로 바꾸면 된다.
 export const HAS_RECENT_DIAGNOSIS = true
-export const HAS_MY_CONSULTATION = true
 // export const HAS_RECENT_DIAGNOSIS = false
-// export const HAS_MY_CONSULTATION = false
 
 // 내 상담(/consult/my) 목록 Mock. 상담사 정보는 중복 저장하지 않고 counselorId로만
 // counselors를 조회해서 쓴다. status는 RESERVED(예약 완료) / IN_PROGRESS(상담 중) /

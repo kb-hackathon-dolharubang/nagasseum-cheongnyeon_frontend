@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import AppHeader from '@/shared/components/molecules/AppHeader.vue'
@@ -10,35 +10,83 @@ import BaseChipGroup from '@/shared/components/atoms/form/BaseChipGroup.vue'
 import CounselorCard from '@/features/consult/components/CounselorCard.vue'
 import {
   recentDiagnosisGoal,
-  myConsultation,
   counselors,
   HAS_RECENT_DIAGNOSIS,
-  HAS_MY_CONSULTATION,
 } from '@/features/consult/data/counselors'
-import { CATEGORY_OPTIONS as CONSULT_CATEGORY_OPTIONS } from '@/features/consult/constants/categories'
+import {
+  CATEGORY_OPTIONS as CONSULT_CATEGORY_OPTIONS,
+  CATEGORY_FROM_API_VALUES,
+  getCategorySubjectLabel,
+} from '@/features/consult/constants/categories'
+import { useAuthStore } from '@/features/auth'
+import { getUserConsultations } from '@/features/consult/api/consultApi'
 
 const router = useRouter()
+const authStore = useAuthStore()
 
 // 원본 Mock은 다른 화면들도 참조하고 있어 그대로 두고, 상담 홈만 플래그로
 // "있는 것으로 볼지"를 가른다 - false면 null과 같은 취급이라 아래 템플릿이
 // Empty State 쪽으로 자연스럽게 갈라진다.
 const diagnosisGoal = computed(() => (HAS_RECENT_DIAGNOSIS ? recentDiagnosisGoal : null))
-const myConsultationData = computed(() => (HAS_MY_CONSULTATION ? myConsultation : null))
+
+/* ── 내 상담 카드 ─────────────────────────────────────────────
+   ConsultMyView와 같은 방식(getUserConsultations)으로 실제 상담 목록을 받아, 그 중
+   지금 진행 중이거나 가장 가까운 예정 상담 하나만 카드에 보여준다. */
+
+const consultations = ref([])
+
+async function loadMyConsultation() {
+  const memberId = authStore.currentMemberId
+  if (!memberId) return
+  try {
+    consultations.value = await getUserConsultations(memberId)
+  } catch {
+    consultations.value = []
+  }
+}
+
+onMounted(loadMyConsultation)
+
+// "2026-09-09" + "14:00:00" -> 오름차순 정렬용 문자열. ConsultMyView와 같은 방식이다.
+function toSortableDateTime(item) {
+  return `${item.reservationDate}T${item.reservationTime}`
+}
+
+// IN_PROGRESS는 이미 시작된 상담이라 날짜·시간이 항상 미래의 RESERVED보다 앞서므로,
+// 오름차순 정렬의 첫 항목이 자연히 "진행 중이면 그거, 아니면 가장 빠른 예정"이 된다.
+const myConsultationData = computed(() => {
+  const upcoming = consultations.value
+    .filter((item) => item.status === 'RESERVED' || item.status === 'IN_PROGRESS')
+    .slice()
+    .sort((a, b) => toSortableDateTime(a).localeCompare(toSortableDateTime(b)))
+  return upcoming[0] ?? null
+})
+
+const myConsultationCounselor = computed(() =>
+  myConsultationData.value
+    ? (counselors.find((item) => item.id === myConsultationData.value.counselorId) ?? null)
+    : null,
+)
+
+const myConsultationCategoryLabel = computed(() =>
+  getCategorySubjectLabel(CATEGORY_FROM_API_VALUES[myConsultationData.value?.category]),
+)
 
 const MY_CONSULTATION_STATUS_LABELS = {
   RESERVED: '예정된 상담',
+  IN_PROGRESS: '상담 진행 중',
 }
 
 const statusLabel = computed(
   () => MY_CONSULTATION_STATUS_LABELS[myConsultationData.value?.status] ?? '예정된 상담',
 )
 
-// "2026-09-09" + "14:00" -> "9월 9일 14:00". 목데이터가 날짜/시간을 따로 들고 있어 화면
-// 표시 시점에만 합친다.
+// "2026-09-09" + "14:00:00" -> "9월 9일 14:00".
 const myConsultationDateTimeLabel = computed(() => {
   if (!myConsultationData.value) return ''
-  const date = new Date(myConsultationData.value.date)
-  return `${date.getMonth() + 1}월 ${date.getDate()}일 ${myConsultationData.value.time}`
+  const date = new Date(myConsultationData.value.reservationDate)
+  const time = (myConsultationData.value.reservationTime ?? '').slice(0, 5)
+  return `${date.getMonth() + 1}월 ${date.getDate()}일 ${time}`
 })
 
 const CATEGORY_OPTIONS = [{ label: '전체', value: 'ALL' }, ...CONSULT_CATEGORY_OPTIONS]
@@ -46,17 +94,12 @@ const CATEGORY_OPTIONS = [{ label: '전체', value: 'ALL' }, ...CONSULT_CATEGORY
 // 상담사 목록 필터 조건으로 그대로 쓰인다.
 const selectedCategory = ref('ALL')
 
-// '상담사 보기'(최근 진단 목표 카드)로 들어왔는지. true면 예약 화면에서 목표 진단 연계
-// 상담(GOAL_DIAGNOSIS)으로, 아니면 분야 칩 기준 일반 상담(GENERAL)으로 이어간다.
-const cameFromGoalDiagnosis = ref(false)
-
 const selectedCategoryLabel = computed(
   () => CATEGORY_OPTIONS.find((option) => option.value === selectedCategory.value)?.label,
 )
 
 function handleCategorySelect(value) {
   selectedCategory.value = value
-  cameFromGoalDiagnosis.value = false
 }
 
 // Mock 데이터의 categories는 분야 칩과 같은 한글 라벨을 쓰므로, 선택된 칩의 라벨로 바로
@@ -71,20 +114,13 @@ const filteredCounselors = computed(() => {
 function goToReservation(counselorId) {
   // '전체'는 특정 분야를 고른 것이 아니라 null로 넘긴다. 예약 화면들은 이 값을 그대로
   // 받아 상담 정보 단계까지 이어서 전달하기만 한다(router state라 URL에는 남지 않는다).
+  // GOAL_DIAGNOSIS 상담은 이 화면이 아닌 다른 진입점에서 만든다 - 여기선 항상 GENERAL.
   const category = selectedCategory.value === 'ALL' ? null : selectedCategory.value
-  const consultationType = cameFromGoalDiagnosis.value ? 'GOAL_DIAGNOSIS' : 'GENERAL'
   router.push({
     name: 'consult-reservation',
     params: { counselorId },
-    state: { category, consultationType },
+    state: { category, consultationType: 'GENERAL' },
   })
-}
-
-function handleViewCounselors() {
-  // 최근 진단 목표를 들고 온 흐름임을 표시해 예약 화면까지 이어간다. 분야 칩은 이
-  // 흐름과 무관하므로 '전체'로 되돌린다.
-  selectedCategory.value = 'ALL'
-  cameFromGoalDiagnosis.value = true
 }
 
 function handleViewMyConsultations() {
@@ -117,14 +153,6 @@ function scrollToCounselors() {
         </p>
         <p class="consult-view__goal-date">목표 시점 {{ diagnosisGoal.targetDate }}</p>
         <p class="consult-view__goal-desc">전문가와 함께 진단 결과를 검토해보세요.</p>
-        <BaseButton
-          class="consult-view__goal-cta"
-          variant="primary"
-          size="lg"
-          @click="handleViewCounselors"
-        >
-          상담사 보기
-        </BaseButton>
       </template>
       <template v-else>
         <p class="consult-view__goal-heading">아직 진단한 목표가 없어요</p>
@@ -145,12 +173,12 @@ function scrollToCounselors() {
     <section class="consult-view__section">
       <h2 class="consult-view__section-title">내 상담</h2>
       <BaseCard class="consult-view__my-consult-card">
-        <template v-if="myConsultationData">
+        <template v-if="myConsultationData && myConsultationCounselor">
           <BaseBadge variant="mint">{{ statusLabel }}</BaseBadge>
           <p class="consult-view__my-consult-counselor">
-            {{ myConsultationData.counselorName }} 상담사
+            {{ myConsultationCounselor.name }} 상담사
           </p>
-          <p class="consult-view__my-consult-category">{{ myConsultationData.category }}</p>
+          <p class="consult-view__my-consult-category">{{ myConsultationCategoryLabel }}</p>
           <p class="consult-view__my-consult-datetime">{{ myConsultationDateTimeLabel }}</p>
           <BaseButton
             class="consult-view__my-consult-cta"
