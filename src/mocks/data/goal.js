@@ -76,6 +76,29 @@ function buildLoanOptionPlan(loanAmount) {
   }
 }
 
+// policyId별 자격요건 체크리스트. met/not_met/needs_verification 세 가지 상태.
+// needs_verification은 시스템에 해당 정보가 없어 판단 불가한 항목이다.
+const LOAN_ELIGIBILITY_CHECKLISTS = {
+  'beotimmok-jeonse': [
+    { criteria: '만 19~34세 이하', status: 'met' },
+    { criteria: '무주택 세대구성원', status: 'met' },
+    { criteria: '연 소득 5천만원 이하', status: 'met' },
+    { criteria: '순자산 3.61억 이하', status: 'needs_verification' },
+  ],
+  'didimdol-jeonse': [
+    { criteria: '만 19~34세 이하', status: 'met' },
+    { criteria: '무주택 세대구성원', status: 'met' },
+    { criteria: '부부합산 순자산 3.61억 이하', status: 'not_met' },
+    { criteria: '연 소득 6천만원 이하', status: 'met' },
+  ],
+  'bank-general-jeonse': [
+    { criteria: '만 19세 이상', status: 'met' },
+    { criteria: '무주택자', status: 'met' },
+    { criteria: '신용점수 기준 충족', status: 'needs_verification' },
+    { criteria: 'DSR 40% 이하', status: 'needs_verification' },
+  ],
+}
+
 // 목표 상세화면 "대출 활용" 토글에 쓰는 대출 옵션 3종. 이 토글은 적격 심사 화면이 아니라
 // "이 대출을 끼면 저축 계획이 어떻게 바뀌나"를 보여주는 곳이라, 진단 결과의 EligibilityResult
 // (coreFindings/advice)와 달리 policyId/productName/eligible/ineligibleReason 단순 구조를 쓴다.
@@ -85,13 +108,15 @@ const GOAL_LOAN_OPTIONS_META = [
     productName: '청년전용 버팀목전세자금대출',
     eligible: true,
     ineligibleReason: null,
+    eligibilityChecklist: LOAN_ELIGIBILITY_CHECKLISTS['beotimmok-jeonse'],
     loanAmount: 80000000,
   },
   {
     policyId: 'didimdol-jeonse',
     productName: '디딤돌 전세대출',
     eligible: false,
-    ineligibleReason: '부부합산 순자산 기준을 초과해 이 대출은 받기 어려워요.',
+    ineligibleReason: null,
+    eligibilityChecklist: LOAN_ELIGIBILITY_CHECKLISTS['didimdol-jeonse'],
     loanAmount: null,
   },
   {
@@ -99,6 +124,7 @@ const GOAL_LOAN_OPTIONS_META = [
     productName: '은행 일반 전세자금대출',
     eligible: true,
     ineligibleReason: null,
+    eligibilityChecklist: LOAN_ELIGIBILITY_CHECKLISTS['bank-general-jeonse'],
     loanAmount: 60000000,
   },
 ]
