@@ -6,6 +6,7 @@ import AppHeader from '@/shared/components/molecules/AppHeader.vue'
 import BaseButton from '@/shared/components/atoms/base/button/BaseButton.vue'
 import BaseBadge from '@/shared/components/atoms/base/badge/BaseBadge.vue'
 import BaseModal from '@/shared/components/atoms/feedback/BaseModal.vue'
+import BaseClimbingLoader from '@/shared/components/atoms/feedback/BaseClimbingLoader.vue'
 import ChatMessage from '@/features/consult/components/ChatMessage.vue'
 import { formatMonthDayWeekdayKo } from '@/shared/utils/formatter'
 import {
@@ -272,6 +273,13 @@ async function handleEndConsultation() {
   }
 }
 
+// AI 리포트 생성이 종료 요청 안에서 동기로 도는 만큼 몇십 초씩 걸릴 수 있어, 그 사이에
+// 배경 클릭으로 모달이 닫혀버리지 않도록 isEnding 동안은 닫힘을 막는다.
+function handleEndModalUpdate(value) {
+  if (isEnding.value) return
+  isEndModalOpen.value = value
+}
+
 // 사용자는 내 상담으로, 상담사는 상담사 홈으로 - 들어온 쪽으로 그대로 돌아간다.
 function goBack() {
   if (currentRole === 'COUNSELOR') {
@@ -354,11 +362,23 @@ function goBack() {
 
     <p v-else class="consult-chat-view__notice-empty">상담 정보를 찾을 수 없어요.</p>
 
-    <BaseModal v-model="isEndModalOpen" title="상담을 종료하시겠습니까?">
-      <p class="consult-chat-view__modal-desc">
-        상담을 종료하면 채팅 내용이 상담 리포트 생성에 활용됩니다.
-      </p>
-      <p v-if="endError" class="consult-chat-view__modal-error">{{ endError }}</p>
+    <BaseModal
+      :model-value="isEndModalOpen"
+      title="상담을 종료하시겠습니까?"
+      @update:model-value="handleEndModalUpdate"
+    >
+      <div v-if="isEnding" class="consult-chat-view__modal-loading">
+        <BaseClimbingLoader />
+        <p class="consult-chat-view__modal-loading-text">
+          상담 리포트를 생성하고 있어요. 잠시만 기다려주세요.
+        </p>
+      </div>
+      <template v-else>
+        <p class="consult-chat-view__modal-desc">
+          상담을 종료하면 채팅 내용이 상담 리포트 생성에 활용됩니다.
+        </p>
+        <p v-if="endError" class="consult-chat-view__modal-error">{{ endError }}</p>
+      </template>
       <template #footer>
         <BaseButton variant="secondary" :disabled="isEnding" @click="isEndModalOpen = false">
           취소
@@ -546,5 +566,21 @@ function goBack() {
   margin: 8px 0 0;
   font-size: 12px;
   color: var(--color-point, #c1442e);
+}
+
+.consult-chat-view__modal-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 0;
+  text-align: center;
+}
+
+.consult-chat-view__modal-loading-text {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--color-text-secondary, #4b564e);
 }
 </style>

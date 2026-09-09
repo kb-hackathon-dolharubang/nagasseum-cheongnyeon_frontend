@@ -17,7 +17,11 @@ import { buildConsultInfo } from '@/features/consult/utils/consultInfo'
 import { formatMonthDayWeekdayKo } from '@/shared/utils/formatter'
 import { fetchActiveGoal } from '@/features/goal/api/goalApi'
 import { useAuthStore } from '@/features/auth'
-import { getUserConsultations, getConsultationReport } from '@/features/consult/api/consultApi'
+import {
+  getUserConsultations,
+  getConsultationReport,
+  retryConsultationReport,
+} from '@/features/consult/api/consultApi'
 
 const props = defineProps({
   reservationId: { type: String, required: true },
@@ -73,7 +77,7 @@ const scheduleLabel = computed(() =>
 )
 
 /* ── 리포트 조회 ───────────────────────────────────────────────
-   실제 리포트 생성 API가 아직 없어 이 호출은 MSW mock(consultHandlers.js)이 응답한다. */
+   상담 종료 시점에 백엔드가 이미 생성해 저장해둔 리포트를 읽어오기만 한다. */
 
 const report = ref(null)
 const reportStatus = ref('GENERATING')
@@ -90,8 +94,18 @@ async function loadReport() {
   }
 }
 
-function handleRetryGenerate() {
-  loadReport()
+// FAILED일 때만 호출된다(NO_MESSAGES는 버튼 자체가 없음). 재시도도 동기 호출이라
+// 몇십 초 걸릴 수 있어 GENERATING 화면을 그대로 재사용한다.
+async function handleRetryGenerate() {
+  reportStatus.value = 'GENERATING'
+  try {
+    const result = await retryConsultationReport(props.reservationId)
+    report.value = result
+    reportStatus.value = result?.status ?? 'FAILED'
+  } catch {
+    report.value = null
+    reportStatus.value = 'FAILED'
+  }
 }
 
 onMounted(() => {
@@ -231,6 +245,15 @@ function goToMyConsultations() {
         <BaseButton size="lg" @click="handleRetryGenerate">다시 생성</BaseButton>
       </div>
 
+      <!-- 상담 중 나눈 메시지가 없어 애초에 요약할 내용이 없는 경우. 다시 시도해도
+           똑같은 결과라 FAILED와 달리 재시도 버튼을 두지 않는다. -->
+      <div v-else-if="reportStatus === 'NO_MESSAGES'" class="consult-report-view__failed">
+        <p class="consult-report-view__failed-title">리포트를 생성할 상담 내용이 없어요.</p>
+        <p class="consult-report-view__failed-desc">
+          상담 중 나눈 대화가 없어 요약할 내용이 없습니다.
+        </p>
+      </div>
+
       <template v-else>
         <section class="consult-report-view__section">
           <h2 class="consult-report-view__section-title">상담 요약</h2>
@@ -239,16 +262,19 @@ function goToMyConsultations() {
           </BaseCard>
         </section>
 
-        <section class="consult-report-view__section">
-          <h2 class="consult-report-view__section-title">핵심 고민과 상담 내용</h2>
+        <section
+          v-if="report.mainConcerns?.length || report.discussionPoints?.length"
+          class="consult-report-view__section"
+        >
+          <h2 class="consult-report-view__section-title">상담 내용</h2>
           <BaseCard class="consult-report-view__discussion-card">
-            <div class="consult-report-view__subsection">
+            <div v-if="report.mainConcerns?.length" class="consult-report-view__subsection">
               <h3 class="consult-report-view__subtitle">핵심 고민</h3>
               <ul class="consult-report-view__list">
                 <li v-for="item in report.mainConcerns" :key="item">{{ item }}</li>
               </ul>
             </div>
-            <div class="consult-report-view__subsection">
+            <div v-if="report.discussionPoints?.length" class="consult-report-view__subsection">
               <h3 class="consult-report-view__subtitle">함께 확인한 내용</h3>
               <ul class="consult-report-view__list">
                 <li v-for="item in report.discussionPoints" :key="item">{{ item }}</li>
@@ -258,13 +284,13 @@ function goToMyConsultations() {
         </section>
 
         <section class="consult-report-view__section">
-          <h2 class="consult-report-view__section-title">상담 결과 및 제안</h2>
+          <h2 class="consult-report-view__section-title">상담 결과</h2>
           <BaseCard class="consult-report-view__discussion-card">
             <div class="consult-report-view__subsection">
               <h3 class="consult-report-view__subtitle">상담 결과</h3>
               <p class="consult-report-view__result-text">{{ report.result }}</p>
             </div>
-            <div class="consult-report-view__subsection">
+            <div v-if="report.recommendations?.length" class="consult-report-view__subsection">
               <h3 class="consult-report-view__subtitle">상담에서 제안된 내용</h3>
               <ul class="consult-report-view__list">
                 <li v-for="item in report.recommendations" :key="item">{{ item }}</li>
@@ -274,7 +300,6 @@ function goToMyConsultations() {
         </section>
 
         <section v-if="nextSteps.length" class="consult-report-view__section">
-          <h2 class="consult-report-view__section-title">바로가기</h2>
           <div class="consult-report-view__actions">
             <BaseCard
               v-for="step in nextSteps"
