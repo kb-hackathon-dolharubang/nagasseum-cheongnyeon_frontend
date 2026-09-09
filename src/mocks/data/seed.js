@@ -3,7 +3,7 @@
 // 값을 새로 쓰지 말고 여기 시드를 참조하거나 여기서 파생시킨다.
 //
 // 페르소나: 26세 회사원, 월 소득 310만원(소득 8~9분위), 순자산 2,500만원.
-// 서울 관악구 봉천동 오피스텔 전세(10~20평, 시세 1.8억)를 2029-07까지 월 70만원씩 모아 준비한다.
+// 서울 관악구 봉천동 오피스텔 전세(10~20평, 시세 1.8억)를 2029-09까지 월 70만원씩 모아 준비한다.
 
 export const SEED_MEMBER = {
   id: 1,
@@ -326,7 +326,7 @@ export const SEED_GOAL = {
     depositMax: null,
   },
 
-  targetDate: '2029-07-31',
+  targetDate: '2029-09-30',
   targetAmount: SEED_MARKET.middleAmount,
   monthlySaving: 700000,
   progress: {

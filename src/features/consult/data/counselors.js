@@ -98,7 +98,7 @@ export const recentDiagnosisGoal = {
   id: 1,
   region: '서울 관악구',
   transactionType: '전세',
-  targetDate: '2029.07',
+  targetDate: '2029.09',
   originalCondition: {
     province: { code: '11', name: '서울특별시' },
     district: { code: '11620', name: '관악구' },
@@ -116,10 +116,10 @@ export const recentDiagnosisGoal = {
     transactionType: 'JEONSE',
     areaRange: { min: 4, max: 9, label: '4~9평' },
   },
-  // 위 추천 조건(4~9평)을 대출 없이 목표 시점(2029-07)까지 맞추려면 필요한 금액
-  // (1.05억 − 순자산 2,500만원 = 8,000만원을 34개월에 나눈 값). 상담에서 "대출을 끼면
+  // 위 추천 조건(4~9평)을 대출 없이 목표 시점(2029-09)까지 맞추려면 필요한 금액
+  // (1.05억 − 순자산 2,500만원 = 8,000만원을 36개월에 나눈 값). 상담에서 "대출을 끼면
   // 얼마까지 줄어드는지"를 짚어주기 위한 출발점이라 일부러 대출 미반영 금액을 둔다.
-  recommendedMonthlySaving: 2360000,
+  recommendedMonthlySaving: 2230000,
 }
 
 // 일반 상담(GENERAL)에서 상담사가 참고할 사용자 정보. 어떤 분야(category)를 골랐는지와
@@ -140,7 +140,7 @@ export const generalConsultInfo = {
   // 자산 요약 화면의 순자산(총자산 3,000만원 − 학자금대출 500만원)과 같은 값이다.
   currentAsset: 25000000,
   monthlySaving: 700000,
-  targetDate: '2029-07',
+  targetDate: '2029-09',
   // 'YES' | 'NO' | 'UNDECIDED'. 선택 정보라 이번 화면에서는 표시하지 않는다.
   loanPreference: 'UNDECIDED',
 }
