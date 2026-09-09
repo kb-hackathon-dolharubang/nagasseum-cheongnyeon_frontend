@@ -16,8 +16,15 @@ export const GoalIcon = {
   render: () =>
     h('svg', { viewBox: '0 0 17 17', fill: 'none' }, [
       h('circle', { cx: '8.5', cy: '8.5', r: '6', stroke: 'currentColor', 'stroke-width': '1.4' }),
-      h('circle', { cx: '8.5', cy: '8.5', r: '3', stroke: 'currentColor', 'stroke-width': '1.4' }),
-      h('circle', { cx: '8.5', cy: '8.5', r: '0.8', fill: 'currentColor' }),
+      h('circle', {
+        cx: '8.5',
+        cy: '8.5',
+        r: '3',
+        stroke: 'currentColor',
+        'stroke-width': '1.4',
+        class: 'nav-icon-detail',
+      }),
+      h('circle', { cx: '8.5', cy: '8.5', r: '0.8', fill: 'currentColor', class: 'nav-icon-dot' }),
     ]),
 }
 
@@ -38,6 +45,7 @@ export const PolicyIcon = {
         stroke: 'currentColor',
         'stroke-width': '1.4',
         'stroke-linecap': 'round',
+        class: 'nav-icon-detail',
       }),
     ]),
 }
@@ -51,6 +59,7 @@ export const CompareIcon = {
         stroke: 'currentColor',
         'stroke-width': '1.4',
         'stroke-linejoin': 'round',
+        class: 'nav-icon-detail',
       }),
     ]),
 }
@@ -77,8 +86,8 @@ export const ConsultIcon = {
         'stroke-width': '1.4',
         'stroke-linejoin': 'round',
       }),
-      h('circle', { cx: '5.5', cy: '7.5', r: '0.7', fill: 'currentColor' }),
-      h('circle', { cx: '8.5', cy: '7.5', r: '0.7', fill: 'currentColor' }),
-      h('circle', { cx: '11.5', cy: '7.5', r: '0.7', fill: 'currentColor' }),
+      h('circle', { cx: '5.5', cy: '7.5', r: '0.7', fill: 'currentColor', class: 'nav-icon-dot' }),
+      h('circle', { cx: '8.5', cy: '7.5', r: '0.7', fill: 'currentColor', class: 'nav-icon-dot' }),
+      h('circle', { cx: '11.5', cy: '7.5', r: '0.7', fill: 'currentColor', class: 'nav-icon-dot' }),
     ]),
 }
