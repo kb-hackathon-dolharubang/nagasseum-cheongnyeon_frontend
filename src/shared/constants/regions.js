@@ -113,6 +113,11 @@ export const DONG_BY_GUGUN = {
     { code: '11200-SEONGSU1', name: '성수동1가' },
     { code: '11200-SEONGSU2', name: '성수동2가' },
   ],
+  11620: [
+    { code: '11620-BONGCHEON', name: '봉천동' },
+    { code: '11620-SILLIM', name: '신림동' },
+    { code: '11620-NAMHYEON', name: '남현동' },
+  ],
 }
 
 // 구/군 코드로 "시/도 구/군" 라벨을 찾는다 (진단 결과 팝업의 조건 요약줄 등에 사용)

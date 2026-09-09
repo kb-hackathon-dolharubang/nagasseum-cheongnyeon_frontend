@@ -96,26 +96,29 @@ export const counselors = [
 // originalCondition은 상담 정보 Bottom Sheet에서 그대로 수정할 수 있어야 하기 때문이다.
 export const recentDiagnosisGoal = {
   id: 1,
-  region: '서울 마포구',
+  region: '서울 관악구',
   transactionType: '전세',
-  targetDate: '2031.08',
+  targetDate: '2029.07',
   originalCondition: {
     province: { code: '11', name: '서울특별시' },
-    district: { code: '11440', name: '마포구' },
-    neighborhood: { code: '11440-SEOGYO', name: '서교동' },
+    district: { code: '11620', name: '관악구' },
+    neighborhood: { code: '11620-BONGCHEON', name: '봉천동' },
     housingType: 'OFFICETEL',
     transactionType: 'JEONSE',
     areaRange: { min: 10, max: 20, label: '10~20평' },
   },
+  // 진단 결과의 REALISTIC 추천(면적을 원룸 수준으로 줄인 조건)과 같은 조건이다.
   recommendedCondition: {
     province: { code: '11', name: '서울특별시' },
-    district: { code: '11440', name: '마포구' },
-    neighborhood: { code: '11440-SEOGYO', name: '서교동' },
-    housingType: 'DETACHED',
+    district: { code: '11620', name: '관악구' },
+    neighborhood: { code: '11620-BONGCHEON', name: '봉천동' },
+    housingType: 'OFFICETEL',
     transactionType: 'JEONSE',
     areaRange: { min: 4, max: 9, label: '4~9평' },
   },
-  recommendedMonthlySaving: 1100000,
+  // 희망 조건 그대로 목표 시점(2029-07)을 지키려면 버팀목 대출을 받고도 이만큼은 모아야 한다
+  // (진단 결과의 PREFERENCE_DATE_FIXED + 청년전용 버팀목전세자금대출 계획과 같은 금액).
+  recommendedMonthlySaving: 970000,
 }
 
 // 일반 상담(GENERAL)에서 상담사가 참고할 사용자 정보. 어떤 분야(category)를 골랐는지와
@@ -127,15 +130,16 @@ export const recentDiagnosisGoal = {
 export const generalConsultInfo = {
   housingPreference: {
     province: { code: '11', name: '서울특별시' },
-    district: { code: '11440', name: '마포구' },
-    neighborhood: { code: '11440-SEOGYO', name: '서교동' },
+    district: { code: '11620', name: '관악구' },
+    neighborhood: { code: '11620-BONGCHEON', name: '봉천동' },
     housingType: 'OFFICETEL',
     transactionType: 'JEONSE',
     areaRange: { min: 10, max: 20, label: '10~20평' },
   },
-  currentAsset: 45000000,
-  monthlySaving: 900000,
-  targetDate: '2031-08',
+  // 자산 요약 화면의 순자산(총자산 820만원 − 학자금대출 500만원)과 같은 값이다.
+  currentAsset: 3200000,
+  monthlySaving: 700000,
+  targetDate: '2029-07',
   // 'YES' | 'NO' | 'UNDECIDED'. 선택 정보라 이번 화면에서는 표시하지 않는다.
   loanPreference: 'UNDECIDED',
 }
