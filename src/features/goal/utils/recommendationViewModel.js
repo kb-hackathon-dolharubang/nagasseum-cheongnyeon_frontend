@@ -262,8 +262,9 @@ export function toLoanCardsViewModel(recommendation) {
       advice: loan.advice ?? null,
     }
 
-    // plan·계산식은 적격 심사가 아니라 목표 엔진 쪽 데이터다. 적격이고 계획이 있을 때만 붙인다.
-    if (status !== 'ELIGIBLE' || !loan.plan) {
+    // plan·계산식은 적격 심사가 아니라 목표 엔진 쪽 데이터(대출을 꼈을 때 저축 계획이 어떻게
+    // 바뀌나)다. 적격 여부와 무관한 계산이므로 plan 만 있으면 상태와 관계없이 붙인다.
+    if (!loan.plan) {
       return card
     }
 

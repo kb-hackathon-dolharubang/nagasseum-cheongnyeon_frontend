@@ -31,8 +31,8 @@ defineProps({
       </li>
     </ul>
 
-    <!-- 대출을 꼈을 때의 저축 계획 변화 · 자금 계산. 적격일 때만 노출한다. -->
-    <template v-if="loan.status === 'ELIGIBLE' && loan.plan">
+    <!-- 대출을 꼈을 때의 저축 계획 변화 · 자금 계산. 적격 여부와 무관한 계산이라 plan 이 있으면 노출한다. -->
+    <template v-if="loan.plan">
       <div class="recommendation-loan-card__delta">
         <div class="recommendation-loan-card__delta-row">
           <span class="recommendation-loan-card__delta-label">월 저축</span>
