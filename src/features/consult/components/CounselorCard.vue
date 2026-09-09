@@ -21,15 +21,20 @@ function handleReserve() {
         <img
           v-if="counselor.image"
           class="counselor-card__avatar-img"
+          :class="{ 'counselor-card__avatar-img--crop': counselor.crop }"
           :src="counselor.image"
+          :style="counselor.crop"
           alt=""
         />
         <span v-else class="counselor-card__avatar-fallback">{{ counselor.name.charAt(0) }}</span>
       </div>
       <div class="counselor-card__info">
-        <p class="counselor-card__name">{{ counselor.name }} 상담사</p>
+        <p class="counselor-card__name">
+          {{ counselor.name }}{{ counselor.isMentor ? '' : ' 상담사' }}
+        </p>
         <p class="counselor-card__title">{{ counselor.title }}</p>
-        <p class="counselor-card__meta">
+        <p v-if="counselor.isMentor" class="counselor-card__meta">{{ counselor.achievement }}</p>
+        <p v-else class="counselor-card__meta">
           ★ {{ counselor.rating }} · 상담 {{ counselor.consultationCount }}건 ·
           {{ counselor.career }}
         </p>
@@ -68,6 +73,7 @@ function handleReserve() {
 }
 
 .counselor-card__avatar {
+  position: relative;
   display: flex;
   flex: none;
   align-items: center;
@@ -83,6 +89,13 @@ function handleReserve() {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+/* 멘토 사진(전신 그림)은 마이페이지 프로필과 같은 확대/위치(crop) 방식을 쓴다 - width/left/top을
+   counselor.crop 인라인 스타일로 받고, 여기서는 그 값이 먹히도록 position/height만 바꿔준다. */
+.counselor-card__avatar-img--crop {
+  position: absolute;
+  height: auto;
 }
 
 .counselor-card__avatar-fallback {

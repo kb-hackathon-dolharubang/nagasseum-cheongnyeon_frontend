@@ -120,7 +120,12 @@ const opponent = computed(() => {
     return { image: chatUserProfile.image, displayName: userName }
   }
   const name = counselor.value?.name ?? '상담사'
-  return { image: counselor.value?.image ?? '', displayName: `${name} 상담사` }
+  const suffix = counselor.value?.isMentor ? '' : ' 상담사'
+  return {
+    image: counselor.value?.image ?? '',
+    crop: counselor.value?.crop,
+    displayName: `${name}${suffix}`,
+  }
 })
 
 /* ── 메시지 조회 / polling ─────────────────────────────────────
@@ -173,7 +178,7 @@ const introMessage = computed(() => {
   return {
     messageId: 'intro',
     senderType: 'COUNSELOR',
-    content: `안녕하세요! ${counselor.value?.name ?? '상담사'} 상담사입니다. 편하게 말씀해주세요.`,
+    content: `안녕하세요! ${counselor.value?.name ?? '상담사'}${counselor.value?.isMentor ? '' : ' 상담사'}입니다. 궁금하신 점 편하게 질문해 주세요.`,
     createdAt: `${date}T${time}`,
   }
 })
@@ -299,7 +304,9 @@ function goBack() {
             <img
               v-if="opponent.image"
               class="consult-chat-view__avatar-img"
+              :class="{ 'consult-chat-view__avatar-img--crop': opponent.crop }"
               :src="opponent.image"
+              :style="opponent.crop"
               alt=""
             />
             <span v-else class="consult-chat-view__avatar-fallback">{{
@@ -409,6 +416,7 @@ function goBack() {
 }
 
 .consult-chat-view__avatar {
+  position: relative;
   display: flex;
   flex: none;
   align-items: center;
@@ -424,6 +432,11 @@ function goBack() {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.consult-chat-view__avatar-img--crop {
+  position: absolute;
+  height: auto;
 }
 
 .consult-chat-view__avatar-fallback {
