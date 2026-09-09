@@ -44,9 +44,17 @@ export async function endConsultation(reservationId) {
 }
 
 // 상담 리포트(/consult/report/:reservationId) 조회. 상담 종료 시점에 백엔드가 AI 요약을
-// 동기로 생성해 저장해두고, 여기서는 저장된 값만 읽어온다. status가 'FAILED'면 아직
-// 리포트가 없거나(메시지 없음) 생성에 실패한 것이다.
+// 동기로 생성해 저장해두고, 여기서는 저장된 값만 읽어온다. status는 'COMPLETED' /
+// 'FAILED'(AI 호출 실패, 재시도 가능) / 'NO_MESSAGES'(상담 중 메시지가 없어 생성 자체를
+// 건너뜀, 재시도 무의미) 중 하나다.
 export async function getConsultationReport(reservationId) {
   const { data } = await httpClient.get(`/api/v1/consultations/${reservationId}/report`)
+  return data.data
+}
+
+// 리포트 재생성. status가 'FAILED'일 때만 의미가 있다(백엔드가 그 외 상태면 400을 준다).
+// 응답 모양은 getConsultationReport와 동일하다.
+export async function retryConsultationReport(reservationId) {
+  const { data } = await httpClient.post(`/api/v1/consultations/${reservationId}/report/retry`)
   return data.data
 }

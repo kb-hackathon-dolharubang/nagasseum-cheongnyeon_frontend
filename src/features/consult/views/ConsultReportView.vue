@@ -17,7 +17,11 @@ import { buildConsultInfo } from '@/features/consult/utils/consultInfo'
 import { formatMonthDayWeekdayKo } from '@/shared/utils/formatter'
 import { fetchActiveGoal } from '@/features/goal/api/goalApi'
 import { useAuthStore } from '@/features/auth'
-import { getUserConsultations, getConsultationReport } from '@/features/consult/api/consultApi'
+import {
+  getUserConsultations,
+  getConsultationReport,
+  retryConsultationReport,
+} from '@/features/consult/api/consultApi'
 
 const props = defineProps({
   reservationId: { type: String, required: true },
@@ -90,8 +94,18 @@ async function loadReport() {
   }
 }
 
-function handleRetryGenerate() {
-  loadReport()
+// FAILED일 때만 호출된다(NO_MESSAGES는 버튼 자체가 없음). 재시도도 동기 호출이라
+// 몇십 초 걸릴 수 있어 GENERATING 화면을 그대로 재사용한다.
+async function handleRetryGenerate() {
+  reportStatus.value = 'GENERATING'
+  try {
+    const result = await retryConsultationReport(props.reservationId)
+    report.value = result
+    reportStatus.value = result?.status ?? 'FAILED'
+  } catch {
+    report.value = null
+    reportStatus.value = 'FAILED'
+  }
 }
 
 onMounted(() => {
@@ -229,6 +243,15 @@ function goToMyConsultations() {
         <p class="consult-report-view__failed-title">상담 리포트를 생성하지 못했습니다.</p>
         <p class="consult-report-view__failed-desc">잠시 후 다시 시도해주세요.</p>
         <BaseButton size="lg" @click="handleRetryGenerate">다시 생성</BaseButton>
+      </div>
+
+      <!-- 상담 중 나눈 메시지가 없어 애초에 요약할 내용이 없는 경우. 다시 시도해도
+           똑같은 결과라 FAILED와 달리 재시도 버튼을 두지 않는다. -->
+      <div v-else-if="reportStatus === 'NO_MESSAGES'" class="consult-report-view__failed">
+        <p class="consult-report-view__failed-title">리포트를 생성할 상담 내용이 없어요.</p>
+        <p class="consult-report-view__failed-desc">
+          상담 중 나눈 대화가 없어 요약할 내용이 없습니다.
+        </p>
       </div>
 
       <template v-else>
