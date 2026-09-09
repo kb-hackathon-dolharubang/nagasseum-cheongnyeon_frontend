@@ -262,16 +262,19 @@ function goToMyConsultations() {
           </BaseCard>
         </section>
 
-        <section class="consult-report-view__section">
-          <h2 class="consult-report-view__section-title">핵심 고민과 상담 내용</h2>
+        <section
+          v-if="report.mainConcerns?.length || report.discussionPoints?.length"
+          class="consult-report-view__section"
+        >
+          <h2 class="consult-report-view__section-title">상담 내용</h2>
           <BaseCard class="consult-report-view__discussion-card">
-            <div class="consult-report-view__subsection">
+            <div v-if="report.mainConcerns?.length" class="consult-report-view__subsection">
               <h3 class="consult-report-view__subtitle">핵심 고민</h3>
               <ul class="consult-report-view__list">
                 <li v-for="item in report.mainConcerns" :key="item">{{ item }}</li>
               </ul>
             </div>
-            <div class="consult-report-view__subsection">
+            <div v-if="report.discussionPoints?.length" class="consult-report-view__subsection">
               <h3 class="consult-report-view__subtitle">함께 확인한 내용</h3>
               <ul class="consult-report-view__list">
                 <li v-for="item in report.discussionPoints" :key="item">{{ item }}</li>
@@ -281,13 +284,13 @@ function goToMyConsultations() {
         </section>
 
         <section class="consult-report-view__section">
-          <h2 class="consult-report-view__section-title">상담 결과 및 제안</h2>
+          <h2 class="consult-report-view__section-title">상담 결과</h2>
           <BaseCard class="consult-report-view__discussion-card">
             <div class="consult-report-view__subsection">
               <h3 class="consult-report-view__subtitle">상담 결과</h3>
               <p class="consult-report-view__result-text">{{ report.result }}</p>
             </div>
-            <div class="consult-report-view__subsection">
+            <div v-if="report.recommendations?.length" class="consult-report-view__subsection">
               <h3 class="consult-report-view__subtitle">상담에서 제안된 내용</h3>
               <ul class="consult-report-view__list">
                 <li v-for="item in report.recommendations" :key="item">{{ item }}</li>
@@ -297,7 +300,6 @@ function goToMyConsultations() {
         </section>
 
         <section v-if="nextSteps.length" class="consult-report-view__section">
-          <h2 class="consult-report-view__section-title">바로가기</h2>
           <div class="consult-report-view__actions">
             <BaseCard
               v-for="step in nextSteps"
