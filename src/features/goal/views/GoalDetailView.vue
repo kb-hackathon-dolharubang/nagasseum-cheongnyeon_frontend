@@ -16,7 +16,9 @@ import GoalProgressCard from '@/features/goal/components/GoalProgressCard.vue'
 import SavingForecastCard from '@/features/goal/components/SavingForecastCard.vue'
 import MonthlySavingEditModal from '@/features/goal/components/MonthlySavingEditModal.vue'
 import MarketPriceAlertCard from '@/features/goal/components/MarketPriceAlertCard.vue'
+import LoanScenarioToggle from '@/features/goal/components/LoanScenarioToggle.vue'
 import { useGoalStore } from '@/features/goal/store/goalStore'
+import { useLoanScenario } from '@/features/goal/composables/useLoanScenario'
 
 const props = defineProps({
   goalId: { type: [String, Number], required: true },
@@ -27,6 +29,15 @@ const goalStore = useGoalStore()
 const toast = useToast()
 
 const detail = computed(() => goalStore.goalDetail)
+
+const {
+  selectedIndex: selectedLoanIndex,
+  options: loanOptions,
+  selectedOption: selectedLoanOption,
+  isIneligible: isLoanIneligible,
+  displayProgress,
+  displayForecasts,
+} = useLoanScenario(detail)
 
 // 상세 조회 응답에는 title 필드가 없어서 "강남구 오피스텔 전세" 형태로 직접 조합한다.
 const conditionTitle = computed(() => {
@@ -118,14 +129,30 @@ async function confirmDeleteGoal() {
         <p class="goal-detail-view__condition">{{ conditionSummary }}</p>
       </div>
 
-      <GoalProgressCard :progress="detail.progress" />
+      <div class="goal-detail-view__loan-scenario">
+        <LoanScenarioToggle
+          v-if="loanOptions.length > 0"
+          v-model="selectedLoanIndex"
+          :options="loanOptions"
+        />
 
-      <SavingForecastCard
-        :saving-status="detail.savingStatus"
-        :forecasts="detail.forecasts"
-        :target-date="detail.targetDate"
-        @change-saving="isSavingModalOpen = true"
-      />
+        <Transition name="loan-scenario-fade" mode="out-in">
+          <div :key="selectedLoanIndex" class="goal-detail-view__loan-scenario-content">
+            <p v-if="isLoanIneligible" class="goal-detail-view__loan-ineligible">
+              {{ selectedLoanOption.ineligibleReason }}
+            </p>
+
+            <GoalProgressCard :progress="displayProgress" />
+
+            <SavingForecastCard
+              :saving-status="detail.savingStatus"
+              :forecasts="displayForecasts"
+              :target-date="detail.targetDate"
+              @change-saving="isSavingModalOpen = true"
+            />
+          </div>
+        </Transition>
+      </div>
 
       <p v-if="goalStore.updateError" class="goal-detail-view__error">
         월 저축 계획을 수정하지 못했어요.
@@ -216,6 +243,47 @@ async function confirmDeleteGoal() {
   font-weight: 700;
   color: var(--color-text-primary, #888888);
   opacity: 0.7;
+}
+
+/* 토글이 이 그룹(달성률/예상 달성 시점 카드)에만 영향을 준다는 걸 시세 전망 카드와
+   시각적으로 구분해서 보여준다. */
+.goal-detail-view__loan-scenario {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--color-border, #262626);
+  border-radius: 20px;
+  /* Transition(out-in)이 콘텐츠를 지웠다 다시 그리는 순간 토글 위치가 출렁이지 않도록
+     내부 레이아웃을 잡아준다. */
+  overflow: hidden;
+}
+
+.goal-detail-view__loan-scenario-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.goal-detail-view__loan-ineligible {
+  margin: 0;
+  padding: 0 4px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--color-text-secondary, #9aa09a);
+}
+
+.loan-scenario-fade-enter-active,
+.loan-scenario-fade-leave-active {
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
+}
+
+.loan-scenario-fade-enter-from,
+.loan-scenario-fade-leave-to {
+  opacity: 0;
+  transform: translateY(6px);
 }
 
 .goal-detail-view__skeleton {

@@ -29,6 +29,88 @@ function roundTo(amount, unit) {
   return Math.round(amount / unit) * unit
 }
 
+// 대출 옵션별 forecasts를 계산한다. FIXED 기준일이 이 대출을 썼을 때의 "현재 목표" 기준점이 되고,
+// RECENT_AVERAGE/LATEST의 monthsDiff는 그 FIXED 기준일보다 몇 개월 이른지(양수) 늦은지(음수)를 뜻한다
+// (SavingForecastCard가 이 monthsDiff로 타임라인 위치와 "앞당겨졌어요" 문구를 그린다).
+function buildLoanOptionForecasts(remainingAmount) {
+  const bases = [
+    { basis: 'FIXED', monthlySaving: SEED_GOAL.monthlySaving },
+    { basis: 'RECENT_AVERAGE', monthlySaving: SEED_GOAL.savingHistory.recentAverageSaving },
+    { basis: 'LATEST', monthlySaving: SEED_GOAL.savingHistory.latestSaving },
+  ]
+
+  const now = currentYm()
+  const dated = bases.map(({ basis, monthlySaving }) => ({
+    basis,
+    monthlySaving,
+    // 남은 금액이 0이면 이미 달성한 상태라 expectedDate가 null로 내려온다(SavingForecastCard 관례).
+    expectedDate:
+      remainingAmount <= 0
+        ? null
+        : addMonths(now, Math.max(Math.ceil(remainingAmount / monthlySaving), 1)),
+  }))
+
+  const fixedDate = dated.find((forecast) => forecast.basis === 'FIXED').expectedDate
+
+  return dated.map((forecast) => ({
+    ...forecast,
+    monthsDiff:
+      forecast.basis === 'FIXED' || !forecast.expectedDate || !fixedDate
+        ? 0
+        : monthsBetween(forecast.expectedDate, fixedDate),
+  }))
+}
+
+// 대출을 활용하면 필요한 자기자금(targetAmount)이 대출금만큼 줄어든다. currentAmount는 실제로
+// 모아둔 돈이라 대출 여부와 무관하게 그대로다.
+function buildLoanOptionPlan(loanAmount) {
+  const targetAmount = Math.max(SEED_GOAL.targetAmount - loanAmount, 0)
+  const currentAmount = SEED_GOAL.progress.currentAmount
+  const remainingAmount = Math.max(targetAmount - currentAmount, 0)
+  const achievementRate =
+    targetAmount > 0 ? Math.min(Math.round((currentAmount / targetAmount) * 100), 100) : 100
+
+  return {
+    progress: { targetAmount, currentAmount, remainingAmount, achievementRate },
+    forecasts: buildLoanOptionForecasts(remainingAmount),
+  }
+}
+
+// 목표 상세화면 "대출 활용" 토글에 쓰는 대출 옵션 3종. 진단 결과 mock(buildMockRecommendationResult)의
+// policyId/productName/eligible/ineligibleReason 명명을 그대로 따른다.
+const GOAL_LOAN_OPTIONS_META = [
+  {
+    policyId: 'beotimmok-jeonse',
+    productName: '청년전용 버팀목전세자금대출',
+    eligible: true,
+    ineligibleReason: null,
+    loanAmount: 80000000,
+  },
+  {
+    policyId: 'didimdol-jeonse',
+    productName: '디딤돌 전세대출',
+    eligible: false,
+    ineligibleReason: '부부합산 순자산 기준을 초과해 이 대출은 받기 어려워요.',
+    loanAmount: null,
+  },
+  {
+    policyId: 'bank-general-jeonse',
+    productName: '은행 일반 전세자금대출',
+    eligible: true,
+    ineligibleReason: null,
+    loanAmount: 60000000,
+  },
+]
+
+function buildGoalLoanOptions() {
+  return GOAL_LOAN_OPTIONS_META.map(({ eligible, loanAmount, ...meta }) => ({
+    ...meta,
+    eligible,
+    loanAmount,
+    ...(eligible ? buildLoanOptionPlan(loanAmount) : { progress: null, forecasts: null }),
+  }))
+}
+
 // POST /api/v1/goals mock 저장 응답 — 실제 DB 저장 없이 성공 응답만 흉내낸다.
 export const mockGoalSaveResponse = { goalId: SEED_GOAL.id }
 
@@ -80,6 +162,9 @@ export const mockGoalDetail = {
       monthsDiff: 7,
     },
   ],
+  // 목표 상세화면 "대출 활용" 토글용 — 각 옵션의 progress/forecasts는 위 progress/forecasts와
+  // 같은 shape이라 GoalProgressCard/SavingForecastCard가 그대로 재사용된다.
+  loanOptions: buildGoalLoanOptions(),
 }
 
 // GET /api/v1/goals/{goalId} 응답 mock ("목표 조회" API 명세 기준).

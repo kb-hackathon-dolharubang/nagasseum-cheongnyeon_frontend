@@ -246,10 +246,20 @@ function forecastNote(forecast) {
 .saving-forecast-card__forecasts {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 0;
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+.saving-forecast-card__forecast {
+  padding: 12px 0;
+  border-top: 1px solid var(--color-border, #262626);
+}
+
+.saving-forecast-card__forecast:first-child {
+  padding-top: 0;
+  border-top: none;
 }
 
 .saving-forecast-card__forecast-main {
