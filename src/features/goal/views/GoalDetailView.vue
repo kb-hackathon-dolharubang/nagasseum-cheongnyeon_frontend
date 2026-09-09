@@ -10,6 +10,7 @@ import BaseSkeleton from '@/shared/components/atoms/feedback/BaseSkeleton.vue'
 import { formatEok, formatManwon, formatYearMonthKo } from '@/shared/utils/formatter'
 import { HOUSING_TYPE_LABEL, DEAL_TYPE_LABEL } from '@/shared/constants/housing'
 import { findRegionBySigunguCode } from '@/shared/constants/regions'
+import { DONG_BY_SIGUNGU } from '@/shared/constants/regionDongs'
 import { useToast } from '@/shared/composables/useToast'
 
 import GoalProgressCard from '@/features/goal/components/GoalProgressCard.vue'
@@ -39,14 +40,18 @@ const {
   displayForecasts,
 } = useLoanScenario(detail)
 
-// 상세 조회 응답에는 title 필드가 없어서 "강남구 오피스텔 전세" 형태로 직접 조합한다.
+// 상세 조회 응답에는 title 필드가 없어서 "관악구 봉천동 오피스텔 전세" 형태로 직접 조합한다.
+// 동은 진단에서 선택하지 않을 수도 있어(dongCode가 null) 있을 때만 끼워 넣는다.
 const conditionTitle = computed(() => {
   if (!detail.value) return ''
 
-  const { regionCode, housingType, dealType } = detail.value.housing
+  const { regionCode, dongCode, housingType, dealType } = detail.value.housing
   const sigunguName = findRegionBySigunguCode(regionCode)?.sigunguName ?? ''
+  const dongName =
+    DONG_BY_SIGUNGU[regionCode]?.find((dong) => dong.code === dongCode)?.dongName ?? ''
   return [
     sigunguName,
+    dongName,
     HOUSING_TYPE_LABEL[housingType] ?? housingType,
     DEAL_TYPE_LABEL[dealType] ?? dealType,
   ]

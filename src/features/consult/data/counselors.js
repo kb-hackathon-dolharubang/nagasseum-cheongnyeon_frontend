@@ -96,7 +96,7 @@ export const counselors = [
 // originalCondition은 상담 정보 Bottom Sheet에서 그대로 수정할 수 있어야 하기 때문이다.
 export const recentDiagnosisGoal = {
   id: 1,
-  region: '서울 관악구',
+  region: '서울 관악구 봉천동',
   transactionType: '전세',
   targetDate: '2029.09',
   originalCondition: {

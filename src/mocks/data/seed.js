@@ -311,7 +311,9 @@ export const SEED_GOAL = {
   status: 'ACTIVE',
   housing: {
     regionCode: SEED_MARKET.regionCode,
-    regionName: SEED_MARKET.regionName,
+    // 표시용 전체 지역명. 진단에서 동까지 골랐으므로 동도 포함한다 — 홈 목표 카드가
+    // 이 문자열에서 시도만 떼어내 "관악구 봉천동"으로 쓴다(ActiveGoalCard.shortRegionName).
+    regionName: `${SEED_MARKET.fullRegionName} ${SEED_MARKET.dongName}`,
     dongCode: SEED_MARKET.dongCode,
     housingType: SEED_MARKET.housingType,
     dealType: SEED_MARKET.dealType,
