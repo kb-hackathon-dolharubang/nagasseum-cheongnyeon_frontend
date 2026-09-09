@@ -22,9 +22,7 @@ defineEmits(['update:modelValue'])
       @click="$emit('update:modelValue', index)"
     >
       <span class="recommendation-loan-tabs__name">{{ loan.productName }}</span>
-      <BaseBadge :variant="loan.eligible ? 'mint' : 'point'">
-        {{ loan.eligible ? '받을 수 있음' : '받을 수 없음' }}
-      </BaseBadge>
+      <BaseBadge :variant="loan.statusVariant">{{ loan.statusLabel }}</BaseBadge>
     </button>
   </div>
 </template>
