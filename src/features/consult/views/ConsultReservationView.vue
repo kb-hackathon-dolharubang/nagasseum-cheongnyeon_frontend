@@ -122,7 +122,9 @@ function goNext() {
           <img
             v-if="counselor.image"
             class="consult-reservation-view__avatar-img"
+            :class="{ 'consult-reservation-view__avatar-img--crop': counselor.crop }"
             :src="counselor.image"
+            :style="counselor.crop"
             alt=""
           />
           <span v-else class="consult-reservation-view__avatar-fallback">{{
@@ -130,7 +132,9 @@ function goNext() {
           }}</span>
         </div>
         <div class="consult-reservation-view__counselor-info">
-          <p class="consult-reservation-view__counselor-name">{{ counselor.name }} 상담사</p>
+          <p class="consult-reservation-view__counselor-name">
+            {{ counselor.name }}{{ counselor.isMentor ? '' : ' 상담사' }}
+          </p>
           <p class="consult-reservation-view__counselor-type">1:1 채팅 상담</p>
         </div>
       </div>
@@ -239,6 +243,7 @@ function goNext() {
 }
 
 .consult-reservation-view__avatar {
+  position: relative;
   display: flex;
   flex: none;
   align-items: center;
@@ -254,6 +259,11 @@ function goNext() {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.consult-reservation-view__avatar-img--crop {
+  position: absolute;
+  height: auto;
 }
 
 .consult-reservation-view__avatar-fallback {

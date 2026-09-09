@@ -176,7 +176,8 @@ function scrollToCounselors() {
         <template v-if="myConsultationData && myConsultationCounselor">
           <BaseBadge variant="mint">{{ statusLabel }}</BaseBadge>
           <p class="consult-view__my-consult-counselor">
-            {{ myConsultationCounselor.name }} 상담사
+            {{ myConsultationCounselor.name
+            }}{{ myConsultationCounselor.isMentor ? '' : ' 상담사' }}
           </p>
           <p class="consult-view__my-consult-category">{{ myConsultationCategoryLabel }}</p>
           <p class="consult-view__my-consult-datetime">{{ myConsultationDateTimeLabel }}</p>

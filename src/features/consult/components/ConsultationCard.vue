@@ -52,7 +52,9 @@ function handleCta() {
         <img
           v-if="counselor?.image"
           class="consultation-card__avatar-img"
+          :class="{ 'consultation-card__avatar-img--crop': counselor.crop }"
           :src="counselor.image"
+          :style="counselor.crop"
           alt=""
         />
         <span v-else class="consultation-card__avatar-fallback">{{
@@ -60,7 +62,9 @@ function handleCta() {
         }}</span>
       </div>
       <div class="consultation-card__info">
-        <p class="consultation-card__name">{{ counselor?.name ?? '상담사' }} 상담사</p>
+        <p class="consultation-card__name">
+          {{ counselor?.name ?? '상담사' }}{{ counselor?.isMentor ? '' : ' 상담사' }}
+        </p>
         <p class="consultation-card__subject">{{ subjectLabel }}</p>
       </div>
       <BaseBadge :variant="statusMeta.badgeVariant">{{ statusMeta.label }}</BaseBadge>
@@ -94,6 +98,7 @@ function handleCta() {
 }
 
 .consultation-card__avatar {
+  position: relative;
   display: flex;
   flex: none;
   align-items: center;
@@ -109,6 +114,11 @@ function handleCta() {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.consultation-card__avatar-img--crop {
+  position: absolute;
+  height: auto;
 }
 
 .consultation-card__avatar-fallback {

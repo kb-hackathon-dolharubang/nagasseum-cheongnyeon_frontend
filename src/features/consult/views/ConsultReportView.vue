@@ -208,7 +208,9 @@ function goToMyConsultations() {
           <img
             v-if="counselor.image"
             class="consult-report-view__avatar-img"
+            :class="{ 'consult-report-view__avatar-img--crop': counselor.crop }"
             :src="counselor.image"
+            :style="counselor.crop"
             alt=""
           />
           <span v-else class="consult-report-view__avatar-fallback">{{
@@ -216,7 +218,9 @@ function goToMyConsultations() {
           }}</span>
         </div>
         <div class="consult-report-view__summary-info">
-          <p class="consult-report-view__summary-name">{{ counselor.name }} 상담사</p>
+          <p class="consult-report-view__summary-name">
+            {{ counselor.name }}{{ counselor.isMentor ? '' : ' 상담사' }}
+          </p>
           <p class="consult-report-view__summary-meta">{{ scheduleLabel }} · {{ subjectLabel }}</p>
         </div>
       </div>
@@ -344,6 +348,7 @@ function goToMyConsultations() {
 }
 
 .consult-report-view__avatar {
+  position: relative;
   display: flex;
   flex: none;
   align-items: center;
@@ -359,6 +364,11 @@ function goToMyConsultations() {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.consult-report-view__avatar-img--crop {
+  position: absolute;
+  height: auto;
 }
 
 .consult-report-view__avatar-fallback {

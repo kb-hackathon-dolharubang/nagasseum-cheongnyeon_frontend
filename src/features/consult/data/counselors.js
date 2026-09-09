@@ -1,6 +1,9 @@
 import counselor1 from '@/assets/images/counselor1.png'
 import counselor2 from '@/assets/images/counselor2.png'
 import counselor3 from '@/assets/images/counselor3.png'
+import climberJeonse from '@/assets/images/climber.png'
+import climberMonthly from '@/assets/images/climber3.png'
+import climberOwn from '@/assets/images/climber4.png'
 
 // 상담사 조회 API가 아직 없어 Mock 데이터를 그대로 화면에서 import해서 쓴다.
 // API가 생기면 이 배열 대신 consultApi 응답을 쓰도록 ConsultView만 바꾸면 된다.
@@ -39,6 +42,48 @@ export const counselors = [
     categories: ['자산 관리', '저축'],
     earliestAvailable: '9월 10일 10:00',
     image: counselor3,
+  },
+  // 목표를 실제로 달성한 사용자 멘토. 전문 상담사와 같은 배열/같은 카드 UI를 그대로 쓰고,
+  // isMentor로만 "별점·상담 건수·경력" 대신 "목표 달성 경험"을 보여줄지 가른다(CounselorCard 참고).
+  // name에 이미 "멘토" 호칭이 포함되어 있어, 상담사 화면들의 "{{ name }} 상담사" 표기도
+  // isMentor일 때는 그 접미사를 붙이지 않는다.
+  //
+  // image는 상담사 사진(counselor1~3)과 달리 1086x1448 전신 그림이라 동그란 아바타에
+  // object-fit: cover만 쓰면 얼굴이 너무 작게 잘린다. 마이페이지 프로필(useAvatar.js
+  // AVATAR_OPTIONS)이 같은 원본 이미지에 얼굴 중심으로 확대/위치 조정한 crop 값을 이미
+  // 계산해뒀으므로 그 값을 그대로 재사용한다 - 이미지가 같으니 배율도 그대로 맞는다.
+  {
+    id: 4,
+    name: '전세한걸음 멘토',
+    title: '전세 독립 경험 멘토',
+    achievement: '서울 · 전세 · 3년 만에 목표 달성',
+    categories: ['목표 설정', '저축', '주거'],
+    earliestAvailable: '9월 10일 14:00',
+    image: climberJeonse,
+    crop: { width: '123.4%', left: '-12.4%', top: '4.5%' },
+    isMentor: true,
+  },
+  {
+    id: 5,
+    name: '자취새싹 멘토',
+    title: '월세 독립 경험 멘토',
+    achievement: '서울 · 월세 · 2년 만에 목표 달성',
+    categories: ['저축', '주거', '자산 관리'],
+    earliestAvailable: '9월 10일 16:00',
+    image: climberMonthly,
+    crop: { width: '110%', left: '-6%', top: '9.5%' },
+    isMentor: true,
+  },
+  {
+    id: 6,
+    name: '내집앞으로 멘토',
+    title: '내 집 마련 경험 멘토',
+    achievement: '경기 · 매매 · 5년 만에 목표 달성',
+    categories: ['주거', '대출', '자산 관리'],
+    earliestAvailable: '9월 11일 10:00',
+    image: climberOwn,
+    crop: { width: '108%', left: '-8%', top: '11.5%' },
+    isMentor: true,
   },
 ]
 
@@ -329,6 +374,35 @@ export const availableReservationSlots = {
       slots: [
         { time: '10:00', available: true },
         { time: '13:00', available: true },
+      ],
+    },
+  ],
+  // 멘토(id 4~6)도 상담사와 같은 예약 화면·flow를 그대로 타므로, earliestAvailable에 표시한
+  // 날짜/시간을 실제로 선택 가능한 슬롯으로도 넣어둔다.
+  4: [
+    {
+      date: '2026-09-10',
+      slots: [
+        { time: '14:00', available: true },
+        { time: '16:00', available: true },
+      ],
+    },
+  ],
+  5: [
+    {
+      date: '2026-09-10',
+      slots: [
+        { time: '13:00', available: true },
+        { time: '16:00', available: true },
+      ],
+    },
+  ],
+  6: [
+    {
+      date: '2026-09-11',
+      slots: [
+        { time: '10:00', available: true },
+        { time: '15:00', available: true },
       ],
     },
   ],

@@ -189,7 +189,9 @@ async function handleConfirm() {
           <img
             v-if="counselor.image"
             class="consult-reservation-info-view__avatar-img"
+            :class="{ 'consult-reservation-info-view__avatar-img--crop': counselor.crop }"
             :src="counselor.image"
+            :style="counselor.crop"
             alt=""
           />
           <span v-else class="consult-reservation-info-view__avatar-fallback">{{
@@ -197,7 +199,9 @@ async function handleConfirm() {
           }}</span>
         </div>
         <div class="consult-reservation-info-view__summary-info">
-          <p class="consult-reservation-info-view__summary-name">{{ counselor.name }} 상담사</p>
+          <p class="consult-reservation-info-view__summary-name">
+            {{ counselor.name }}{{ counselor.isMentor ? '' : ' 상담사' }}
+          </p>
           <p class="consult-reservation-info-view__summary-schedule">{{ scheduleLabel }}</p>
         </div>
         <BaseButton
@@ -308,6 +312,7 @@ async function handleConfirm() {
 }
 
 .consult-reservation-info-view__avatar {
+  position: relative;
   display: flex;
   flex: none;
   align-items: center;
@@ -323,6 +328,11 @@ async function handleConfirm() {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.consult-reservation-info-view__avatar-img--crop {
+  position: absolute;
+  height: auto;
 }
 
 .consult-reservation-info-view__avatar-fallback {

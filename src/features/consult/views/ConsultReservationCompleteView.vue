@@ -70,7 +70,9 @@ function goToConsultHome() {
             <img
               v-if="counselor.image"
               class="consult-reservation-complete-view__avatar-img"
+              :class="{ 'consult-reservation-complete-view__avatar-img--crop': counselor.crop }"
               :src="counselor.image"
+              :style="counselor.crop"
               alt=""
             />
             <span v-else class="consult-reservation-complete-view__avatar-fallback">{{
@@ -78,7 +80,7 @@ function goToConsultHome() {
             }}</span>
           </div>
           <p class="consult-reservation-complete-view__counselor-name">
-            {{ counselor.name }} 상담사
+            {{ counselor.name }}{{ counselor.isMentor ? '' : ' 상담사' }}
           </p>
         </div>
 
@@ -180,6 +182,7 @@ function goToConsultHome() {
 }
 
 .consult-reservation-complete-view__avatar {
+  position: relative;
   display: flex;
   flex: none;
   align-items: center;
@@ -195,6 +198,11 @@ function goToConsultHome() {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.consult-reservation-complete-view__avatar-img--crop {
+  position: absolute;
+  height: auto;
 }
 
 .consult-reservation-complete-view__avatar-fallback {
