@@ -73,7 +73,7 @@ const scheduleLabel = computed(() =>
 )
 
 /* ── 리포트 조회 ───────────────────────────────────────────────
-   실제 리포트 생성 API가 아직 없어 이 호출은 MSW mock(consultHandlers.js)이 응답한다. */
+   상담 종료 시점에 백엔드가 이미 생성해 저장해둔 리포트를 읽어오기만 한다. */
 
 const report = ref(null)
 const reportStatus = ref('GENERATING')

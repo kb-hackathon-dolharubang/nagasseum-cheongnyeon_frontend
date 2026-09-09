@@ -43,9 +43,9 @@ export async function endConsultation(reservationId) {
   return data.data
 }
 
-// 상담 리포트(/consult/report/:reservationId) 조회. 실제 AI 리포트 생성 백엔드 API가
-// 아직 없어 이 엔드포인트는 MSW mock으로만 응답한다(mocks/handlers/consultHandlers.js) -
-// 실제 API가 생기면 이 함수는 그대로 두고 mock 핸들러만 지우면 된다.
+// 상담 리포트(/consult/report/:reservationId) 조회. 상담 종료 시점에 백엔드가 AI 요약을
+// 동기로 생성해 저장해두고, 여기서는 저장된 값만 읽어온다. status가 'FAILED'면 아직
+// 리포트가 없거나(메시지 없음) 생성에 실패한 것이다.
 export async function getConsultationReport(reservationId) {
   const { data } = await httpClient.get(`/api/v1/consultations/${reservationId}/report`)
   return data.data
