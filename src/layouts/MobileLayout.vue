@@ -15,10 +15,11 @@ import {
 const route = useRoute()
 const router = useRouter()
 
+// '홈'을 5개 중 가운데(3번째)로 배치한다. 스타일은 다른 탭과 동일.
 const navItems = [
-  { label: '홈', icon: HomeIcon, to: '/home' },
   { label: '정책', icon: PolicyIcon, to: '/policy' },
   { label: '비교', icon: CompareIcon, to: '/compare' },
+  { label: '홈', icon: HomeIcon, to: '/home' },
   { label: '상담', icon: ConsultIcon, to: '/consult' },
   { label: '마이', icon: MyIcon, to: '/my' },
 ]
