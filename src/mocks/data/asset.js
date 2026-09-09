@@ -13,7 +13,9 @@ export const mockOrganizationsResponse = {
       organizationName: 'KB국민은행',
       businessType: 'BK',
       supportedLoginTypes: ['ID', 'CERTIFICATE'],
-      isConnected: true,
+      // 연동 화면(AssetLinkView)이 isConnected인 기관을 목록에서 빼므로, 여기를 true로 두면
+      // 은행 그룹에서 KB국민은행이 사라진다. 연동 시연의 출발점으로 쓰려고 미연동으로 둔다.
+      isConnected: false,
     },
     {
       organizationCode: '0088',
@@ -99,17 +101,11 @@ export const mockOrganizationsResponse = {
   error: null,
 }
 
-// 페르소나가 이미 연동해 둔 기관. SEED_ASSET_INSTITUTIONS의 기관 4곳과 같아야
-// 자산 화면의 "연동된 기관"과 실제 계좌 목록이 어긋나지 않는다.
+// 페르소나가 이미 연동해 둔 기관. KB국민은행은 연동 화면에서 직접 골라 연동하는 시연을
+// 위해 일부러 빼 두었고, 시연에서 연동하면 createMockConnectionResponse가 여기에 넣는다.
 export const mockConnectionsResponse = {
   success: true,
   data: [
-    {
-      organizationCode: '0004',
-      organizationName: 'KB국민은행',
-      businessType: 'BK',
-      connectedAt: '2026-07-23T10:00:00',
-    },
     {
       organizationCode: '0088',
       organizationName: '신한은행',
