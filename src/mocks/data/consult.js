@@ -85,6 +85,47 @@ export const mockConsultationMessages = {
   ],
 }
 
+// GET /api/v1/consultations/:reservationId/report 목 데이터. 예약/채팅/종료는 실제
+// 톰캣 백엔드를 쓰지만, 리포트 생성 API는 아직 백엔드에 없어 어떤 reservationId로
+// 요청해도 항상 이 완료된 리포트를 그대로 돌려준다 - 화면 확인용이라 reservationId별
+// 분기는 두지 않는다.
+export const mockConsultationReport = {
+  status: 'COMPLETED',
+  summary:
+    '이번 상담에서는 현재 자산과 희망 주거 조건을 기준으로 목표 시점까지 저축 계획을 함께 점검했습니다. 지금 속도로는 목표 시점에 다소 못 미칠 수 있어 월 저축액 조정이 필요하다는 점을 확인했습니다.',
+  mainConcerns: ['지금 저축 속도로 목표 시점을 맞출 수 있는지', '월 저축액을 얼마나 늘려야 하는지'],
+  discussionPoints: [
+    '현재 자산과 목표 필요 금액 비교',
+    '희망 주거 조건의 예상 비용 확인',
+    '목표 시점까지 남은 기간과 필요 저축액 계산',
+    '정책 대출 활용 가능성 확인',
+  ],
+  result:
+    '현재 조건을 유지하려면 월 저축액을 늘리거나 목표 시점을 조정하는 방향이 현실적이라는 결론을 확인했습니다.',
+  recommendations: ['월 저축액 조정 검토', '목표 시점 조정 검토', '정책 대출 활용 가능 여부 확인'],
+  nextActions: [
+    {
+      title: '월 저축 계획을 조정해보세요',
+      description: '현재 저축액에서 상향 조정하는 방안을 검토해보세요.',
+      actionType: 'SAVING',
+    },
+    {
+      title: '목표 조건을 다시 확인해보세요',
+      description: '상담 결과를 반영해 목표 시점이나 주거 조건을 수정할 수 있습니다.',
+      actionType: 'GOAL',
+    },
+    {
+      title: '대출 가능 여부를 확인해보세요',
+      description: '현재 조건에서 활용 가능한 정책 대출이 있는지 확인해보세요.',
+      actionType: 'LOAN',
+    },
+  ],
+}
+
+export function getMockConsultationReport() {
+  return mockConsultationReport
+}
+
 let nextReservationId = 100
 
 // POST /api/v1/consultations 응답을 만든다. 실제 백엔드처럼 승인 절차 없이 바로
@@ -95,6 +136,26 @@ export function createMockReservation(payload) {
     status: 'RESERVED',
     reservationDate: payload.reservationDate,
     reservationTime: `${payload.reservationTime}:00`,
+  }
+}
+
+// PATCH /api/v1/consultations/:reservationId/end 응답을 만들면서 GET(users/:userId)이
+// 참조하는 mockUserConsultations의 status도 그대로 반영한다 - 종료 후 재조회해도 같은
+// 상태를 보게 하기 위함이다.
+export function endMockReservation(reservationId) {
+  const reservation = mockUserConsultations.find(
+    (item) => item.reservationId === Number(reservationId),
+  )
+  const endedAt = new Date().toISOString()
+
+  if (reservation) {
+    reservation.status = 'COMPLETED'
+  }
+
+  return {
+    reservationId: Number(reservationId),
+    status: 'COMPLETED',
+    endedAt,
   }
 }
 

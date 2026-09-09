@@ -42,3 +42,11 @@ export async function endConsultation(reservationId) {
   const { data } = await httpClient.patch(`/api/v1/consultations/${reservationId}/end`)
   return data.data
 }
+
+// 상담 리포트(/consult/report/:reservationId) 조회. 실제 AI 리포트 생성 백엔드 API가
+// 아직 없어 이 엔드포인트는 MSW mock으로만 응답한다(mocks/handlers/consultHandlers.js) -
+// 실제 API가 생기면 이 함수는 그대로 두고 mock 핸들러만 지우면 된다.
+export async function getConsultationReport(reservationId) {
+  const { data } = await httpClient.get(`/api/v1/consultations/${reservationId}/report`)
+  return data.data
+}

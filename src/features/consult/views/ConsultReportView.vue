@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import AppHeader from '@/shared/components/molecules/AppHeader.vue'
@@ -8,25 +8,53 @@ import BaseButton from '@/shared/components/atoms/base/button/BaseButton.vue'
 import BaseClimbingLoader from '@/shared/components/atoms/feedback/BaseClimbingLoader.vue'
 import BaseChevronIcon from '@/shared/components/atoms/base/icon/BaseChevronIcon.vue'
 import ConsultationInfoCard from '@/features/consult/components/ConsultationInfoCard.vue'
+import { counselors } from '@/features/consult/data/counselors'
 import {
-  counselors,
-  myConsultations,
-  consultationReports,
-} from '@/features/consult/data/counselors'
-import { getCategorySubjectLabel } from '@/features/consult/constants/categories'
+  CATEGORY_FROM_API_VALUES,
+  getCategorySubjectLabel,
+} from '@/features/consult/constants/categories'
 import { buildConsultInfo } from '@/features/consult/utils/consultInfo'
 import { formatMonthDayWeekdayKo } from '@/shared/utils/formatter'
 import { fetchActiveGoal } from '@/features/goal/api/goalApi'
+import { useAuthStore } from '@/features/auth'
+import { getUserConsultations, getConsultationReport } from '@/features/consult/api/consultApi'
 
 const props = defineProps({
   reservationId: { type: String, required: true },
 })
 
 const router = useRouter()
+const authStore = useAuthStore()
 
-const reservation = computed(
-  () => myConsultations.find((item) => item.reservationId === Number(props.reservationId)) ?? null,
-)
+/* ── 예약 정보 조회 ────────────────────────────────────────────
+   ConsultMyView와 같은 방식(getUserConsultations)으로 실제 백엔드에서 내 상담
+   목록을 받아 reservationId로 찾는다 - 단건 조회 API가 없어 목록에서 찾는 것도
+   ConsultChatView와 동일하다. */
+
+const reservation = ref(null)
+const isLoadingReservation = ref(true)
+
+async function loadReservation() {
+  const memberId = authStore.currentMemberId
+  if (!memberId) {
+    isLoadingReservation.value = false
+    return
+  }
+
+  isLoadingReservation.value = true
+  try {
+    const items = await getUserConsultations(memberId)
+    const found = (items ?? []).find((item) => item.reservationId === Number(props.reservationId))
+    reservation.value = found
+      ? { ...found, category: CATEGORY_FROM_API_VALUES[found.category] ?? found.category }
+      : null
+  } catch {
+    reservation.value = null
+  } finally {
+    isLoadingReservation.value = false
+  }
+}
+
 const counselor = computed(() =>
   reservation.value
     ? (counselors.find((item) => item.id === reservation.value.counselorId) ?? null)
@@ -44,15 +72,32 @@ const scheduleLabel = computed(() =>
   reservation.value ? formatMonthDayWeekdayKo(reservation.value.reservationDate) : '',
 )
 
-// AI가 만드는 리포트 결과. reservationId에 해당하는 Mock이 아직 없으면(막 종료한
-// 상담처럼 실제로도 AI가 아직 결과를 안 만들었을 상태) 생성 중으로 본다.
-const report = computed(() => consultationReports[Number(props.reservationId)] ?? null)
-const reportStatus = ref(report.value?.status ?? 'GENERATING')
+/* ── 리포트 조회 ───────────────────────────────────────────────
+   실제 리포트 생성 API가 아직 없어 이 호출은 MSW mock(consultHandlers.js)이 응답한다. */
+
+const report = ref(null)
+const reportStatus = ref('GENERATING')
+
+async function loadReport() {
+  reportStatus.value = 'GENERATING'
+  try {
+    const result = await getConsultationReport(props.reservationId)
+    report.value = result
+    reportStatus.value = result?.status ?? 'FAILED'
+  } catch {
+    report.value = null
+    reportStatus.value = 'FAILED'
+  }
+}
 
 function handleRetryGenerate() {
-  // 실제 재생성 API는 아직 없어 상태 전환 지점만 만들어둔다.
-  reportStatus.value = 'GENERATING'
+  loadReport()
 }
+
+onMounted(() => {
+  loadReservation()
+  loadReport()
+})
 
 // nextActions.actionType별로 이동할 기존 서비스 화면. 저축 전용 화면이 따로 없고
 // 월 저축 조정도 목표 상세 화면 안에서 이뤄지므로 SAVING/GOAL 모두 그리로 보낸다.
@@ -206,7 +251,9 @@ function goToMyConsultations() {
       </template>
     </template>
 
-    <p v-else class="consult-report-view__notice-empty">상담 정보를 찾을 수 없어요.</p>
+    <p v-else-if="!isLoadingReservation" class="consult-report-view__notice-empty">
+      상담 정보를 찾을 수 없어요.
+    </p>
   </div>
 </template>
 
