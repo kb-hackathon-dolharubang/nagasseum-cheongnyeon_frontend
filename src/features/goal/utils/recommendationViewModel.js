@@ -203,18 +203,69 @@ function toHoldOutCompareRows(realistic, holdOut) {
   }
 }
 
+// 백엔드(EligibilityResult)는 전체 적격/부적격(verdict)을 주지 않는다. 코드가 판정하는 건 핵심 요건
+// (성년·세대주·무주택·소득)뿐이고 순자산·중복대출·신용도 등은 advice 로만 안내되므로, 핵심 요건이
+// 모두 PASS 여도 "받을 수 있음"이라고 단정할 수 없다. 요건별 PASS/FAIL/UNKNOWN 을 3-state 로 합친다:
+//  - FAIL 이 하나라도 있으면 그 대출은 실제로 못 받으므로 '받을 수 없음' (확정)
+//  - FAIL 없고 UNKNOWN 이 있으면 '추가 확인 필요'
+//  - 모두 PASS 면 '핵심 요건 충족' (= 기본은 걸리는 게 없음, 나머지는 advice 로 확인)
+const ELIGIBILITY_RESULT_META = {
+  PASS: { label: '충족', variant: 'mint' },
+  FAIL: { label: '불충족', variant: 'point' },
+  UNKNOWN: { label: '확인 필요', variant: 'quest' },
+}
+
+const ELIGIBILITY_STATUS_META = {
+  ELIGIBLE: { label: '핵심 요건 충족', variant: 'mint' },
+  INELIGIBLE: { label: '받을 수 없음', variant: 'point' },
+  NEEDS_CHECK: { label: '추가 확인 필요', variant: 'quest' },
+}
+
+export function deriveEligibilityStatus(coreFindings) {
+  const results = (coreFindings ?? []).map((finding) => finding.result)
+  if (results.includes('FAIL')) return 'INELIGIBLE'
+  if (results.includes('UNKNOWN')) return 'NEEDS_CHECK'
+  return 'ELIGIBLE'
+}
+
+function toCoreFindingViewModel(finding) {
+  const meta = ELIGIBILITY_RESULT_META[finding.result] ?? {
+    label: finding.result,
+    variant: 'outline',
+  }
+  return {
+    requirement: finding.requirement,
+    result: finding.result,
+    resultLabel: meta.label,
+    resultVariant: meta.variant,
+    basis: finding.basis,
+  }
+}
+
 export function toLoanCardsViewModel(recommendation) {
   const { condition, loanX, loans } = recommendation
 
   return (loans ?? []).map((loan) => {
-    if (!loan.eligible || !loan.plan) {
-      return {
-        policyId: loan.policyId,
-        productName: loan.productName,
-        eligible: false,
-        ineligibleReason: loan.ineligibleReason ?? '이 대출은 현재 조건에서는 받기 어려워요.',
-        aiGuide: null,
-      }
+    const status = deriveEligibilityStatus(loan.coreFindings)
+    const statusMeta = ELIGIBILITY_STATUS_META[status]
+
+    const card = {
+      policyId: loan.policyId,
+      // 다운스트림(RecommendationLoanTabs·GoalConfirmModal)이 productName 키를 계속 읽으므로 유지한다.
+      productName: loan.policyName,
+      status,
+      statusLabel: statusMeta.label,
+      statusVariant: statusMeta.variant,
+      // 목표 확정 모달은 "적격일 때만 대출 낀 계획"을 제안한다 → boolean 하나로 좁혀 넘긴다.
+      eligible: status === 'ELIGIBLE',
+      coreFindings: (loan.coreFindings ?? []).map(toCoreFindingViewModel),
+      advice: loan.advice ?? null,
+    }
+
+    // plan·계산식은 적격 심사가 아니라 목표 엔진 쪽 데이터(대출을 꼈을 때 저축 계획이 어떻게
+    // 바뀌나)다. 적격 여부와 무관한 계산이므로 plan 만 있으면 상태와 관계없이 붙인다.
+    if (!loan.plan) {
+      return card
     }
 
     const { plan } = loan
@@ -225,10 +276,7 @@ export function toLoanCardsViewModel(recommendation) {
         : 0
 
     return {
-      policyId: loan.policyId,
-      productName: loan.productName,
-      eligible: true,
-      ineligibleReason: null,
+      ...card,
       plan,
       // PREFERENCE_SAVING_FIXED는 월 저축액이, PREFERENCE_DATE_FIXED는 목표 시점이 애초에
       // 고정된 값이라 대출을 껴도 그 값 자체는 바뀌지 않는다(다른 쪽 값만 바뀐다). 안 바뀐
@@ -251,7 +299,6 @@ export function toLoanCardsViewModel(recommendation) {
         sumLabel: formatGoalAmount(preparedTotal),
         shortfallLabel: shortfall > 0 ? formatGoalAmount(shortfall) : null,
       },
-      aiGuide: loan.aiGuide,
     }
   })
 }

@@ -11,16 +11,28 @@ defineProps({
   <BaseCard class="recommendation-loan-card">
     <div class="recommendation-loan-card__head">
       <span class="recommendation-loan-card__name">{{ loan.productName }}</span>
-      <BaseBadge :variant="loan.eligible ? 'mint' : 'point'">
-        {{ loan.eligible ? '받을 수 있음' : '받을 수 없음' }}
-      </BaseBadge>
+      <BaseBadge :variant="loan.statusVariant">{{ loan.statusLabel }}</BaseBadge>
     </div>
 
-    <p v-if="!loan.eligible" class="recommendation-loan-card__ineligible">
-      {{ loan.ineligibleReason }}
-    </p>
+    <!-- 핵심 요건별 판정. 백엔드는 전체 적격 라벨을 주지 않고 이 목록만 준다. -->
+    <ul v-if="loan.coreFindings.length > 0" class="recommendation-loan-card__findings">
+      <li
+        v-for="finding in loan.coreFindings"
+        :key="finding.requirement"
+        class="recommendation-loan-card__finding"
+      >
+        <div class="recommendation-loan-card__finding-head">
+          <span class="recommendation-loan-card__finding-name">{{ finding.requirement }}</span>
+          <BaseBadge :variant="finding.resultVariant">{{ finding.resultLabel }}</BaseBadge>
+        </div>
+        <p v-if="finding.basis" class="recommendation-loan-card__finding-basis">
+          {{ finding.basis }}
+        </p>
+      </li>
+    </ul>
 
-    <template v-else>
+    <!-- 대출을 꼈을 때의 저축 계획 변화 · 자금 계산. 적격 여부와 무관한 계산이라 plan 이 있으면 노출한다. -->
+    <template v-if="loan.plan">
       <div class="recommendation-loan-card__delta">
         <div class="recommendation-loan-card__delta-row">
           <span class="recommendation-loan-card__delta-label">월 저축</span>
@@ -65,12 +77,12 @@ defineProps({
           목표 금액까지 <strong>{{ loan.calc.shortfallLabel }}</strong> 더 필요해요
         </p>
       </div>
-
-      <div v-if="loan.aiGuide" class="recommendation-loan-card__ai-guide">
-        <span class="recommendation-loan-card__ai-guide-label">AI 가이드</span>
-        <p class="recommendation-loan-card__ai-guide-text">{{ loan.aiGuide }}</p>
-      </div>
     </template>
+
+    <div v-if="loan.advice" class="recommendation-loan-card__ai-guide">
+      <span class="recommendation-loan-card__ai-guide-label">AI 가이드</span>
+      <p class="recommendation-loan-card__ai-guide-text">{{ loan.advice }}</p>
+    </div>
   </BaseCard>
 </template>
 
@@ -93,10 +105,36 @@ defineProps({
   color: var(--color-text-primary, #ffffff);
 }
 
-.recommendation-loan-card__ineligible {
-  margin: 12px 0 0;
+.recommendation-loan-card__findings {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.recommendation-loan-card__finding {
+  padding: 10px 0;
+  border-top: 1px solid var(--color-border, #262626);
+}
+
+.recommendation-loan-card__finding-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.recommendation-loan-card__finding-name {
   font-size: 13px;
-  line-height: 1.6;
+  font-weight: 700;
+  color: var(--color-text-primary, #ffffff);
+}
+
+.recommendation-loan-card__finding-basis {
+  margin: 4px 0 0;
+  font-size: 12px;
+  line-height: 1.55;
   color: var(--color-text-secondary, #9aa09a);
 }
 
