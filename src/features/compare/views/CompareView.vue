@@ -24,6 +24,7 @@ import DealTypeDistributionCard from '@/features/compare/components/DealTypeDist
 import IncomeBracketDistributionCard from '@/features/compare/components/IncomeBracketDistributionCard.vue'
 import NetAssetHighlightCard from '@/features/compare/components/NetAssetHighlightCard.vue'
 import OccupationDistributionCard from '@/features/compare/components/OccupationDistributionCard.vue'
+import PopularPoliciesCard from '@/features/compare/components/PopularPoliciesCard.vue'
 import PopularRegionsCard from '@/features/compare/components/PopularRegionsCard.vue'
 import SavingRangeCard from '@/features/compare/components/SavingRangeCard.vue'
 import StateNoticeCard from '@/features/compare/components/StateNoticeCard.vue'
@@ -321,6 +322,12 @@ onMounted(async () => {
               />
 
               <PopularRegionsCard class="card--mint" :regions="activeComparison.popularRegions" />
+
+              <PopularPoliciesCard
+                v-if="activeComparison.topPolicies?.length"
+                class="card--cream"
+                :policies="activeComparison.topPolicies"
+              />
             </template>
 
             <div class="disclaimer">
