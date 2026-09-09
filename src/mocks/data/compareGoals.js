@@ -43,6 +43,13 @@ export const mockCompareGoalsSuccess = {
       { rank: 2, regionCode: '11440', regionName: '마포구', ratio: 26.0 },
       { rank: 3, regionCode: '11410', regionName: '서대문구', ratio: 17.0 },
     ],
+    topPolicies: [
+      { rank: 1, policyId: 1, policyName: '청년 전세자금 대출', benefitRatio: 48.2 },
+      { rank: 2, policyId: 2, policyName: '청년도약계좌', benefitRatio: 35.7 },
+      { rank: 3, policyId: 5, policyName: '행복주택 청년 입주', benefitRatio: 22.1 },
+      { rank: 4, policyId: 4, policyName: '청년희망적금', benefitRatio: 18.4 },
+      { rank: 5, policyId: 3, policyName: '청년 월세 지원', benefitRatio: 12.9 },
+    ],
   },
   error: null,
 }
@@ -66,6 +73,7 @@ export const mockCompareGoalsInsufficient = {
     averageTargetAmount: null,
     averagePrepMonths: null,
     popularRegions: null,
+    topPolicies: null,
   },
   error: null,
 }
