@@ -43,13 +43,14 @@ function handleReserve() {
     </div>
 
     <div class="counselor-card__earliest">
-      <span class="counselor-card__earliest-label">가장 빠른 상담</span>
-      <span class="counselor-card__earliest-value">{{ counselor.earliestAvailable }}</span>
+      <div class="counselor-card__earliest-info">
+        <span class="counselor-card__earliest-label">가장 빠른 상담</span>
+        <span class="counselor-card__earliest-value">{{ counselor.earliestAvailable }}</span>
+      </div>
+      <BaseButton class="counselor-card__button" variant="primary" size="md" @click="handleReserve">
+        예약하기
+      </BaseButton>
     </div>
-
-    <BaseButton class="counselor-card__button" variant="primary" size="md" @click="handleReserve">
-      예약하기
-    </BaseButton>
   </BaseCard>
 </template>
 
@@ -127,17 +128,25 @@ function handleReserve() {
 .counselor-card__earliest {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  gap: 10px;
   padding: 10px 14px;
   border-radius: 12px;
   background: var(--color-app-bg, #f7f8f4);
+}
+
+.counselor-card__earliest-info {
+  display: flex;
+  align-items: baseline;
+  flex: 1;
+  min-width: 0;
+  gap: 8px;
 }
 
 .counselor-card__earliest-label {
   font-size: 12px;
   font-weight: 700;
   color: var(--color-text-tertiary, #8f968c);
+  white-space: nowrap;
 }
 
 .counselor-card__earliest-value {
@@ -145,10 +154,17 @@ function handleReserve() {
   font-weight: 800;
   color: var(--color-text-primary, #ffffff);
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
-.counselor-card__button {
-  align-self: flex-end;
-  margin-top: 2px;
+/* "가장 빠른 상담" 박스 안에 들어가면서 BaseButton md(46px)보다 작게 눌러야 해서
+   높이/여백/글자 크기만 이 카드 안에서 오버라이드한다. 배경색·글자색·굵기(variant=primary)는
+   BaseButton 쪽 스타일을 그대로 쓴다 - 클래스 두 개를 걸어 md 기본값보다 우선하게 만든다. */
+.counselor-card__button.base-button--md {
+  flex-shrink: 0;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 10px;
+  font-size: 13px;
 }
 </style>
