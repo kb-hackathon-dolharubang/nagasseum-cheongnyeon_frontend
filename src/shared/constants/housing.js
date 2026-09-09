@@ -8,4 +8,5 @@ export const HOUSING_TYPE_LABEL = {
 export const DEAL_TYPE_LABEL = {
   JEONSE: '전세',
   WOLSE: '월세',
+  TRADE: '매매',
 }

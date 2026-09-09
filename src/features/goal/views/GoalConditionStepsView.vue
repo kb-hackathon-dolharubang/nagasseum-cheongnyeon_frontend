@@ -150,7 +150,11 @@ function handleSkip() {
             :title="currentStep.title"
             :description="currentStep.description"
           >
-            <GoalRegionStep v-if="currentStep.kind === 'region'" v-model="form.regionCode" />
+            <GoalRegionStep
+              v-if="currentStep.kind === 'region'"
+              v-model="form.regionCode"
+              v-model:dong-code="form.dongCode"
+            />
 
             <GoalChoiceStep
               v-else-if="currentStep.kind === 'choice'"
