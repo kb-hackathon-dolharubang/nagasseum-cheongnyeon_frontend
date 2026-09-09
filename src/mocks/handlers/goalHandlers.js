@@ -11,9 +11,17 @@ import {
   mockGoalMarketTrend,
   mockGoalSummaryHome,
   mockActiveGoal,
+  mockGoalNotFoundResponse,
 } from '@/mocks/data/goal'
+import { hasActiveGoal, markGoalCreated } from '@/mocks/data/demoState'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+
+// 시연용 "목표 없음" 상태(demoState.js)에서 목표 관련 조회가 돌려줄 응답.
+// 백엔드도 활성 목표가 없으면 GOAL_001로 404를 준다.
+function goalNotFound() {
+  return HttpResponse.json(mockGoalNotFoundResponse, { status: 404 })
+}
 
 // 쿼리 문자열은 값이 전부 문자열이라, 백엔드가 Integer/Long으로 받는 필드는 숫자로 되돌린다.
 // (목 데이터 계산이 문자열 연결로 새는 것을 막는다) 없는 파라미터는 "조건 없음"이므로 null이다.
@@ -84,6 +92,8 @@ export const goalHandlers = [
 
   http.post(`${API_BASE_URL}/api/v1/goals`, async ({ request }) => {
     await request.json()
+    // 시연 중 목표를 만들면 이 시점부터 홈·비교가 목표 있는 화면으로 이어진다.
+    markGoalCreated()
     return HttpResponse.json({ success: true, data: mockGoalSaveResponse, error: null })
   }),
 
@@ -131,23 +141,30 @@ export const goalHandlers = [
   // 하단 탭바가 목표 탭 진입 시 상세/빈 화면을 가르는 데 쓴다. 아래 `/goals/:goalId`가
   // `active`도 goalId로 매칭해버리므로 반드시 그보다 먼저 등록해야 한다.
   http.get(`${API_BASE_URL}/api/v1/goals/active`, () => {
+    // 활성 목표가 없을 때는 404가 아니라 data:null로 정상 응답한다(goalApi.fetchActiveGoal).
+    if (!hasActiveGoal()) {
+      return HttpResponse.json({ success: true, data: null, error: null })
+    }
     return HttpResponse.json({ success: true, data: mockActiveGoal, error: null })
   }),
 
   // 홈 화면 매물 시세 변화 카드. 아래 `/goals/:goalId`가 `market-trend`도 goalId로 매칭해버리므로
   // 반드시 그보다 먼저 등록해야 한다(MSW는 먼저 등록된 핸들러가 이긴다).
   http.get(`${API_BASE_URL}/api/v1/goals/market-trend`, () => {
+    if (!hasActiveGoal()) return goalNotFound()
     return HttpResponse.json({ success: true, data: mockGoalMarketTrend, error: null })
   }),
 
   // 홈 화면 목표 달성 요약 카드. 마찬가지로 `/goals/:goalId`보다 먼저 등록해야 한다.
   http.get(`${API_BASE_URL}/api/v1/goals/summary`, () => {
+    if (!hasActiveGoal()) return goalNotFound()
     return HttpResponse.json({ success: true, data: mockGoalSummaryHome, error: null })
   }),
 
   // 주의: 아래 `/goals/:goalId`는 세그먼트 하나짜리 경로는 모두 goalId로 매칭하므로,
   // `market-trend`/`summary`처럼 고정 경로를 쓰는 핸들러는 항상 이보다 먼저 등록해야 한다.
   http.get(`${API_BASE_URL}/api/v1/goals/:goalId`, ({ params }) => {
+    if (!hasActiveGoal()) return goalNotFound()
     return HttpResponse.json({
       success: true,
       data: { ...mockGoal, goalId: Number(params.goalId) },
@@ -169,6 +186,7 @@ export const goalHandlers = [
   }),
 
   http.get(`${API_BASE_URL}/api/v1/goals/:goalId/detail`, ({ params }) => {
+    if (!hasActiveGoal()) return goalNotFound()
     return HttpResponse.json({
       success: true,
       data: { ...mockGoalDetail, goalId: Number(params.goalId) },

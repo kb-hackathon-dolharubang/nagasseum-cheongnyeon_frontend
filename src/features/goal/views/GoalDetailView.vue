@@ -10,6 +10,7 @@ import BaseSkeleton from '@/shared/components/atoms/feedback/BaseSkeleton.vue'
 import { formatEok, formatManwon, formatYearMonthKo } from '@/shared/utils/formatter'
 import { HOUSING_TYPE_LABEL, DEAL_TYPE_LABEL } from '@/shared/constants/housing'
 import { findRegionBySigunguCode } from '@/shared/constants/regions'
+import { DONG_BY_SIGUNGU } from '@/shared/constants/regionDongs'
 import { useToast } from '@/shared/composables/useToast'
 
 import GoalProgressCard from '@/features/goal/components/GoalProgressCard.vue'
@@ -39,14 +40,18 @@ const {
   displayForecasts,
 } = useLoanScenario(detail)
 
-// 상세 조회 응답에는 title 필드가 없어서 "강남구 오피스텔 전세" 형태로 직접 조합한다.
+// 상세 조회 응답에는 title 필드가 없어서 "관악구 봉천동 오피스텔 전세" 형태로 직접 조합한다.
+// 동은 진단에서 선택하지 않을 수도 있어(dongCode가 null) 있을 때만 끼워 넣는다.
 const conditionTitle = computed(() => {
   if (!detail.value) return ''
 
-  const { regionCode, housingType, dealType } = detail.value.housing
+  const { regionCode, dongCode, housingType, dealType } = detail.value.housing
   const sigunguName = findRegionBySigunguCode(regionCode)?.sigunguName ?? ''
+  const dongName =
+    DONG_BY_SIGUNGU[regionCode]?.find((dong) => dong.code === dongCode)?.dongName ?? ''
   return [
     sigunguName,
+    dongName,
     HOUSING_TYPE_LABEL[housingType] ?? housingType,
     DEAL_TYPE_LABEL[dealType] ?? dealType,
   ]
@@ -54,17 +59,23 @@ const conditionTitle = computed(() => {
     .join(' ')
 })
 
-// 조건 요약: "10~20평 · 보증금 3억~6억 · 목표 시점 2028년 9월"
+// 조건 요약: "10~20평 · 보증금 1억~3억 · 목표 시점 2029년 9월"
 // 지역/매물유형/거래유형은 바로 위 제목(conditionTitle)에 이미 나오니 여기서는 중복하지 않는다.
+// 보증금은 진단에서 고르지 않을 수 있고(null), 그때 formatEok을 태우면 "0억~0억"이 되므로
+// 아예 항목을 빼서 안 고른 조건이 0원으로 읽히지 않게 한다.
 const conditionSummary = computed(() => {
   if (!detail.value) return ''
 
   const { areaMin, areaMax, depositMin, depositMax } = detail.value.housing
+  const hasDeposit = depositMin != null && depositMax != null
+
   return [
     `${areaMin}~${areaMax}평`,
-    `보증금 ${formatEok(depositMin)}~${formatEok(depositMax)}`,
+    hasDeposit ? `보증금 ${formatEok(depositMin)}~${formatEok(depositMax)}` : null,
     `목표 시점 ${formatYearMonthKo(detail.value.targetDate)}`,
-  ].join(' · ')
+  ]
+    .filter(Boolean)
+    .join(' · ')
 })
 
 onMounted(() => {

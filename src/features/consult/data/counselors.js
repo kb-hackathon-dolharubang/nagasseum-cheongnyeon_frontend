@@ -96,26 +96,30 @@ export const counselors = [
 // originalCondition은 상담 정보 Bottom Sheet에서 그대로 수정할 수 있어야 하기 때문이다.
 export const recentDiagnosisGoal = {
   id: 1,
-  region: '서울 마포구',
+  region: '서울 관악구 봉천동',
   transactionType: '전세',
-  targetDate: '2031.08',
+  targetDate: '2029.09',
   originalCondition: {
     province: { code: '11', name: '서울특별시' },
-    district: { code: '11440', name: '마포구' },
-    neighborhood: { code: '11440-SEOGYO', name: '서교동' },
+    district: { code: '11620', name: '관악구' },
+    neighborhood: { code: '11620-BONGCHEON', name: '봉천동' },
     housingType: 'OFFICETEL',
     transactionType: 'JEONSE',
     areaRange: { min: 10, max: 20, label: '10~20평' },
   },
+  // 진단 결과의 REALISTIC 추천(면적을 원룸 수준으로 줄인 조건)과 같은 조건이다.
   recommendedCondition: {
     province: { code: '11', name: '서울특별시' },
-    district: { code: '11440', name: '마포구' },
-    neighborhood: { code: '11440-SEOGYO', name: '서교동' },
-    housingType: 'DETACHED',
+    district: { code: '11620', name: '관악구' },
+    neighborhood: { code: '11620-BONGCHEON', name: '봉천동' },
+    housingType: 'OFFICETEL',
     transactionType: 'JEONSE',
     areaRange: { min: 4, max: 9, label: '4~9평' },
   },
-  recommendedMonthlySaving: 1100000,
+  // 위 추천 조건(4~9평)을 대출 없이 목표 시점(2029-09)까지 맞추려면 필요한 금액
+  // (1.05억 − 순자산 2,500만원 = 8,000만원을 36개월에 나눈 값). 상담에서 "대출을 끼면
+  // 얼마까지 줄어드는지"를 짚어주기 위한 출발점이라 일부러 대출 미반영 금액을 둔다.
+  recommendedMonthlySaving: 2230000,
 }
 
 // 일반 상담(GENERAL)에서 상담사가 참고할 사용자 정보. 어떤 분야(category)를 골랐는지와
@@ -127,15 +131,16 @@ export const recentDiagnosisGoal = {
 export const generalConsultInfo = {
   housingPreference: {
     province: { code: '11', name: '서울특별시' },
-    district: { code: '11440', name: '마포구' },
-    neighborhood: { code: '11440-SEOGYO', name: '서교동' },
+    district: { code: '11620', name: '관악구' },
+    neighborhood: { code: '11620-BONGCHEON', name: '봉천동' },
     housingType: 'OFFICETEL',
     transactionType: 'JEONSE',
     areaRange: { min: 10, max: 20, label: '10~20평' },
   },
-  currentAsset: 45000000,
-  monthlySaving: 900000,
-  targetDate: '2031-08',
+  // 자산 요약 화면의 순자산(총자산 3,000만원 − 학자금대출 500만원)과 같은 값이다.
+  currentAsset: 25000000,
+  monthlySaving: 700000,
+  targetDate: '2029-09',
   // 'YES' | 'NO' | 'UNDECIDED'. 선택 정보라 이번 화면에서는 표시하지 않는다.
   loanPreference: 'UNDECIDED',
 }
@@ -314,7 +319,7 @@ export const chatMessages = {
 // 상담사(COUNSELOR) 역할로 채팅 화면을 확인할 때 상단에 표시할 사용자 쪽 Mock 프로필.
 // 아직 회원 프로필 조회 API가 없어 데모 확인용으로만 최소 형태로 둔다.
 export const chatUserProfile = {
-  name: '김OO',
+  name: '김지우',
   image: '',
 }
 

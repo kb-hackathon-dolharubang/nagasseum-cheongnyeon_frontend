@@ -2,19 +2,20 @@
 // 홈 화면 목업 요구사항을 채우기 위한 임시 목업이며, 실제 정책 담당자와 통합할 때
 // 이 파일과 dashboardExtrasHandlers.js를 실제 엔드포인트로 교체해야 한다.
 
-export const mockRecommendedPolicies = [
-  {
-    id: 101,
-    policyName: '청년 월세 특별지원',
-    policySummary: '최대 20만원 · 만 19-34세 1인가구',
-    applyPeriodType: '기간',
-    applyEndDate: '2026-08-16',
-  },
-  {
-    id: 102,
-    policyName: '중소기업 취업청년 전월세보증금 대출',
-    policySummary: '최대 1억 · 연 1.2%',
-    applyPeriodType: '상시',
-    applyEndDate: null,
-  },
-]
+import { mockPolicySummaries } from '@/mocks/data/policy'
+
+// 전세 목표를 세운 페르소나에게 실제로 도움이 되는 두 건. 별도 id 체계를 두지 않고
+// 정책 목록(mockPolicySummaries)에서 골라 오므로, 카드에서 정책 상세로 그대로 이어진다.
+const RECOMMENDED_POLICY_IDS = [1, 4]
+
+export const mockRecommendedPolicies = RECOMMENDED_POLICY_IDS.map((id) => {
+  const policy = mockPolicySummaries.find((item) => item.id === id)
+
+  return {
+    id: policy.id,
+    policyName: policy.policyName,
+    policySummary: policy.benefitDescription,
+    applyPeriodType: policy.applyPeriodType,
+    applyEndDate: policy.applyEndDate,
+  }
+})
