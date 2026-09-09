@@ -1,8 +1,8 @@
 import { SEED_GOAL, SEED_MEMBER } from '@/mocks/data/seed'
 
-// 26세(±2) · 순자산 320만원(±1,000만원) 구간의 또래 코호트. 소득은 8~9분위로 높은 편인데
-// 아직 모은 돈은 또래 평균에 못 미치는 페르소나라, cohortAverageNetAssets를 내 순자산보다
-// 조금 위에 둔다.
+// 26세(±2) · 순자산 2,500만원(±1,000만원) 구간의 또래 코호트. 소득이 8~9분위로 높은 편이라
+// cohortAverageNetAssets를 내 순자산보다 조금 아래에 둬서, 모아둔 돈은 또래보다 앞서 있다는
+// 것이 읽히게 한다.
 const COHORT = {
   assetRange: 10000000,
   ageRange: 2,
@@ -18,7 +18,7 @@ export const mockCompareAssetsSuccess = {
     snapshotYm: '202608',
     cohort: COHORT,
     myMonthlyIncome: SEED_MEMBER.monthlyIncome,
-    cohortAverageNetAssets: 5100000,
+    cohortAverageNetAssets: 21400000,
     // "내 월 저축액"은 자산 요약(assetBreakdown)·목표 화면과 같은 값(SEED_GOAL.monthlySaving)을 쓴다.
     saving: {
       mine: SEED_GOAL.monthlySaving,
